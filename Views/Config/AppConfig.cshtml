@@ -1,0 +1,188 @@
+﻿@using Dedup.Extensions
+@using Dedup.ViewModels
+@model HerokuAppConfig
+@{
+    ViewData["Title"] = "Heroku App Configuration";
+}
+
+@if (!Model.IsNull())
+{
+    <div class="row">
+        <!-- left column -->
+        <div class="col-md-9">
+            <div class="kt-portlet">
+                <!-- form start -->
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(model => model.resource.uuid)
+
+                    <div class="kt-form">
+                        <div class="kt-portlet__body">
+                            <div class="form-group">
+                                <label>DeDup Heroku Application</label>
+                                <br /><br />
+                                <label>Heroku App Name</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        @Html.TextBoxFor(model => model.resource.app_name, new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Heroku App ID</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        @Html.TextBoxFor(model => model.resource.heroku_id, new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Heroku App DeDup Add-On Callback URL</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        @Html.TextBoxFor(model => model.resource.callback_url, new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Heroku App Add-Ons</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="box full-border">
+                                            <div class="box-body" style="text-align:center">
+                                                @if (Model.addons != null && Model.addons.Count() > 0)
+                                                {
+                                                    <div class="table-responsive">
+
+                                                        <table class="table no-margin">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Add-On Name</th>
+                                                                    <th>Current Plan</th>
+                                                                    <th>Plan Price</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+
+                                                                @foreach (var addon in Model.addons)
+                                                                {
+                                                                    string[] app = default(string[]);
+                                                                    if (!addon.plan.IsNull() && !string.IsNullOrEmpty(addon.plan.name))
+                                                                    {
+                                                                        app = @addon.plan.name.Split(':');
+                                                                    }
+                                                                    <tr>
+                                                                        <td>
+                                                                            @if (app.Length > 0)
+                                                                            {
+                                                                                @app[0]
+                                                                            }
+                                                                        </td>
+                                                                        <td>
+                                                                            @if (app.Length > 1)
+                                                                            {
+                                                                                @app[1]
+                                                                            }
+                                                                        </td>
+                                                                        <td>
+                                                                            &nbsp;
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+
+                                                            </tbody>
+                                                        </table>
+
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span colspan="3" align="center">No Add-ons found!</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--<div class="form-group">
+                                <label>Heroku App Config Vars</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="box full-border">
+                                            <div class="box-body" style="text-align:center">
+                                                @if (Model.config_vars != null && Model.config_vars.Count() > 0)
+                                                {
+                                                    <div class="table-responsive">
+
+                                                        <table class="table no-margin">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th style="white-space:nowrap;">Config Var Name</th>
+                                                                    <th>Config Var Value</th>
+                                                                    @*<th>Actions</th>*@
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+
+                                                                @foreach (var keyPair in Model.config_vars)
+                                                                {
+                                                                    <tr>
+                                                                        <td>
+                                                                            @keyPair.Key
+                                                                        </td>
+                                                                        <td>
+                                                                            @if (!string.IsNullOrEmpty(@keyPair.Value))
+                                                                            {
+                                                                                <span class="wrapword">@keyPair.Value</span>
+                                                                            }
+                                                                            @Html.TextAreaFor(model => @keyPair.Value, new { @class = "form-control", @placeholder = "Please enter database url", @style = "display: none;" })
+                                                                            @Html.ValidationMessageFor(model => @keyPair.Value)
+                                                                        </td>
+
+                                                                    </tr>
+                                                                }
+
+                                                            </tbody>
+                                                        </table>
+
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span colspan="3" align="center">No Config Vars found!</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>-->
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts{
+    <script src="~/js/bundlejueryval.min.js" type="text/javascript"></script>
+    <script src="~/js/site-validation.js"></script>
+    <script type="text/javascript">
+        $("a[name=edit]").on("click", function (e) {
+            e.preventDefault();
+            var inputTag = $(this).closest(".row").find(".form-control");
+            if ($(inputTag).attr("readonly")) {
+                $(inputTag).removeAttr("readonly");
+                $(this).html("Cancel");
+            }
+            else {
+                $(inputTag).attr("readonly", "readonly");
+                $(this).html("Edit");
+            }
+        })
+
+    </script>
+}
+

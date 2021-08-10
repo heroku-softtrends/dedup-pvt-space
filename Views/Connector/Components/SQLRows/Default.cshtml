@@ -1,0 +1,126 @@
+﻿@addTagHelper "Pioneer.Pagination.PioneerPaginationTagHelper, Pioneer.Pagination"
+@using Dedup.ViewModels
+@using System.Globalization
+@using System.Web;
+@model IEnumerable<dynamic>
+
+@if (ViewBag.connectorConfig != null)
+{
+    PlanInfos currentPlanFeatures = default(PlanInfos);
+    if (ViewBag.CurrentPlan.IsInitialized)
+    {
+        currentPlanFeatures = (PlanInfos)ViewBag.CurrentPlan;
+    }
+    ConnectorConfig connectorConfig = ViewBag.connectorConfig as ConnectorConfig;
+    int recordCount = 0;
+
+    <!-- Info boxes -->
+    <div class="col-md-12">
+        <div class="box full-border">
+            <div class="box-header with-border" style="margin:2px 10px;padding-left:0px;border-bottom: 1px solid #00c0ef !important;">
+                <div class="col-md-3 no-padding">
+                    <h3 class="box-title">
+                        Connector: @connectorConfig.connectorName
+                        @if (ViewData.ContainsKey("count_" + connectorConfig.connectorId.ToString()))
+                        {
+                            if (ViewData["count_" + connectorConfig.connectorId.ToString()] != null)
+                            {
+                                @string.Format("", int.TryParse(ViewData["count_" + connectorConfig.connectorId.ToString()].ToString(), out recordCount))
+                                <span data-rowcount="@ViewData["count_" + connectorConfig.connectorId.ToString()]">
+                                    (@String.Format(CultureInfo.InvariantCulture,
+                                               "{0:#,#}", ViewData["count_" + connectorConfig.connectorId.ToString()]))
+                                </span>
+                            }
+                        }
+                    </h3>
+                </div>
+                <div class="col-md-4"><span>Table Name: @connectorConfig.destObjectName</span></div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body table-responsive">
+                <p class="header pull-left" style="margin-left:4px;margin-bottom:-5px;cursor: pointer;">
+                    <i class="fa fa-angle-left collapse"></i>
+                    <i class="fa fa-angle-left collapse" style="margin-top:-10px;"></i>
+                </p>
+                <div class="content col-md-12" style="display:none;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                @foreach (var prop in connectorConfig.sourceObjectFields)
+                                {
+                                    <th style="border-bottom: 2px solid #f4f4f4;">
+                                        @prop
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Count() > 0 && !(Model is IEnumerable<ConnectorConfig>))
+                            {
+                                @foreach (var row in Model)
+                                {
+                                    var dataRow = (IDictionary<string, object>)row;
+                                    @if (dataRow != null)
+                                    {
+                                        <tr>
+                                            @foreach (var prop in connectorConfig.sourceObjectFields)
+                                            {
+                                                <td align="left">
+                                                    @if (dataRow.ContainsKey(prop) && dataRow[prop] != null)
+                                                    {
+                                                        if (dataRow[prop].GetType().Name == "String")
+                                                        {
+                                                            @HttpUtility.UrlDecode(Convert.ToString(dataRow[prop]))
+                                                        }
+                                                        else
+                                                        {
+                                                            @dataRow[prop]
+                                                        }
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <tr name="emptyrow">
+                                    <td colspan="@connectorConfig.sourceObjectFields.Count()" align="center">
+                                        @if (recordCount == 0)
+                                        {
+                                            <span>No rows found!</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Loading...</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <!-- /.table-responsive -->
+                    @if (@ViewData[connectorConfig.connectorId.ToString()] != null)
+                    {
+                        <div class="clearfix no-border">
+                            <pioneer-pagination info="@ViewData[connectorConfig.connectorId.ToString()] as Pioneer.Pagination.PaginatedMetaModel" route="/connector/getsyncrecordsbypageno" data-id="@connectorConfig.connectorId"></pioneer-pagination>
+                            @*<div class="col-md-9 pull-right" style="display:none;">
+                                <button type="button" class="btn btn-primary" name="btnSendToWave"
+                                        disabled=@(isPlanInfoAvail && currentPlanFeatures.isSendToWave ? "" : "disabled")>
+                                    Send to Wave
+                                </button>&nbsp;&nbsp;
+                                            <button type="button" class="btn btn-primary" name="btnExportToFile"
+                                                    disabled=@(isPlanInfoAvail && currentPlanFeatures.isExportToFile ? "" : "disabled")>
+                                                Export to File
+                                            </button>
+                            </div>*@
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- /.box-body -->
+        </div>
+        <!-- /.box -->
+    </div>
+}

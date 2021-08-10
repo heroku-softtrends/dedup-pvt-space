@@ -1,0 +1,106 @@
+﻿@model IEnumerable<Dedup.ViewModels.ConnectorConfig>
+
+@{
+    ViewData["Title"] = "Administration: Sql Data Explorer";
+}
+
+@if (Model != null && Model.Count() > 0)
+{
+    foreach (var item in Model.Select((value, i) => new { i, value }))
+    {
+        <div class="row" name="etrows" id="@item.value.connectorId" data-isrowsread="@(item.i == 0 ? true : false)">
+            @await Component.InvokeAsync("SQLRows", new { id = item.value.connectorId, page = 1, isRowsRead = (item.i == 0 ? true : false), connectorConfig = item.value })
+        </div>
+    }
+}
+
+@section Scripts{
+    <script type="text/javascript">
+        function updatePaging(container) {
+            if ($ && container) {
+                $(container).find("ul.pagination")
+                .addClass("pagination pagination-sm no-margin pull-right")
+                $(container).find(".box-body .header").click(function () {
+                    $header = $(this);
+                    $content = $header.next();
+                    $content.slideToggle(200, function () {
+                        if ($header.find("i").hasClass("collapse")) {
+                            var container = $(this).closest("div[name=etrows]");
+                            if ($("span[data-rowcount]")) {
+                                if (container.attr("data-isrowsread") && container.attr("data-isrowsread").toLowerCase() == "false") {
+                                    showMask();
+                                    $.ajax({
+                                        url: "/connector/getsyncrecordsbypageno/" + container.attr("id") + "?page=1",
+                                        method: "GET",
+                                        error: function (xhr, status, error) {
+                                            hideMask();
+                                            console.log(xhr);
+                                            console.log(status);
+                                            if (status == "timeout") {
+                                                container.find("tr[name=emptyrow] td").html("Request timeout!");
+                                            }
+                                        },
+                                        success: function (data) {
+                                            container.html(data);
+                                            container.attr("data-isrowsread", "true");
+                                            updatePaging(container);
+                                            $(container).find(".box-body .header").click();
+                                            hideMask();
+                                        },
+                                        timeout: 60000 // sets timeout to 1 min
+                                    });
+                                }
+                            }
+                            $header.find("i").removeClass("collapse");
+                            $header.find("i").addClass("expand");
+                        }
+                        else {
+                            $header.find("i").removeClass("expand");
+                            $header.find("i").addClass("collapse");
+                        }
+                        $header.find("i:last").css({ marginTop: "-10px" });
+                    });
+                })
+                $(container).find("ul.pagination li a").each(function () {
+                    var aTag = $(this);
+                    var id = $(this).closest("ul").attr("data-id");
+                    var pageNo = aTag.attr('href').match(numRegex);
+                    var aHref = aTag.attr('href').match(charRegex);
+                    if (id && aHref.length > 0 && pageNo.length > 0)
+                        aTag.attr('href', aHref[0] + id + '?page=' + pageNo[0]);
+                });
+                $(container).find("ul.pagination").on("click", "li a", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showMask();
+                    var container = $(this).closest("div[name=etrows]");
+                    $.ajax({
+                        url: $(this).attr("href"),
+                        method: "GET",
+                        error: function (xhr, status, error) {
+                            hideMask();
+                            console.log(xhr);
+                            console.log(status);
+                            if (status == "timeout") {
+                                container.find("tr[name=emptyrow] td").html("Request timeout!");
+                            }
+                        },
+                        success: function (data) {
+                            container.html(data);
+                            updatePaging(container);
+                            $(container).find(".box-body .header").click();
+                            hideMask();
+                        },
+                        timeout: 60000 // sets timeout to 1 min
+                    });
+                });
+            }
+        }
+
+        $(function () {
+            updatePaging($("div[name=etrows]"));
+            if ($(".box-body .header").first().length > 0)
+                $(".box-body .header").first().click();
+        });
+    </script>
+}

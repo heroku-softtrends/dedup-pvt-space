@@ -1,0 +1,51 @@
+// Configure bundling and minification for the project.
+[
+  {
+    "outputFileName": "wwwroot/css/sitebundle.css",
+    // An array of relative input file paths. Globbing patterns supported
+    "inputFiles": [
+      "wwwroot/assets/vendors/general/sweetalert2/dist/sweetalert2.css",
+      "wwwroot/assets/vendors/custom/vendors/fontawesome5/css/all.css",
+      "wwwroot/assets/vendors/custom/datatables/datatables.bundle.css",
+      "wwwroot/lib/jquery-ui/themes/base/jquery-ui.css",
+      "wwwroot/assets/demo/demo2/base/style.bundle.css" 
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/js/sitebundle.js",
+    "inputFiles": [
+      "wwwroot/assets/vendors/general/jquery/dist/jquery.js",
+      "wwwroot/assets/vendors/general/bootstrap/dist/js/bootstrap.js",
+      "wwwroot/lib/jquery-ui/jquery-ui.js",
+      "wwwroot/js/moment.js",
+      "wwwroot/js/site.js",
+      "wwwroot/assets/vendors/general/sweetalert2/dist/sweetalert2.js",
+      "wwwroot/assets/vendors/custom/components/vendors/sweetalert2/init.js",
+      "wwwroot/assets/vendors/general/sticky-js/dist/sticky.min.js",
+      "wwwroot/assets/demo/demo2/base/scripts.bundle.min.js",
+      "wwwroot/assets/app/bundle/app.bundle.min.js",
+      "wwwroot/assets/vendors/custom/datatables/datatables.bundle.min.js"
+    ],
+    // Optionally specify minification options
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    // Optinally generate .map file
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/bundlejueryval.js",
+    "inputFiles": [
+      "wwwroot/assets/vendors/general/jquery-validation/dist/jquery.validate.js",
+      "wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"
+    ],
+    // Optionally specify minification options
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    // Optinally generate .map file
+    "sourceMap": false
+  }
+]

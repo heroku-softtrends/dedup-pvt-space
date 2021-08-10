@@ -1,0 +1,503 @@
+﻿@model IEnumerable<Dedup.ViewModels.ConnectorConfig>
+
+@{
+    ViewData["Title"] = "Dedup Data Steward";
+}
+
+@section styles{
+    <link rel="stylesheet" href="~/css/pioneerpagenation.min.css" />
+    <style type="text/css">
+        .expand {
+            -webkit-transform: rotate(-90deg);
+            -ms-transform: rotate(-90deg);
+            -moz-transform: rotate(-90deg);
+            -o-transform: rotate(-90deg);
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .collapse {
+            -webkit-transform: rotate(90deg);
+            -ms-transform: rotate(-90deg);
+            -moz-transform: rotate(-90deg);
+            -o-transform: rotate(-90deg);
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+
+        table {
+            margin: 0 auto;
+            width: 100%;
+            clear: both;
+            border-collapse: collapse;
+            table-layout: fixed;
+            word-wrap: break-word;
+        }
+
+        th, td {
+            /*            white-space: nowrap;
+        */
+            width: 159px;
+        }
+
+        #kt_table_1 tr > *:nth-child(1) {
+            width: 23px!important;
+        }
+        #kt_table_1 tr > *:nth-child(2) {
+            width: 23px !important;
+        }
+        /*div.dataTables_wrapper {
+                    width: 1000px;
+                }*/
+
+    </style>
+}
+
+@if (Model != null && Model.Count() > 0)
+{
+    foreach (var item in Model.Select((value, i) => new { i, value }))
+    {
+        <div class="row" name="etrows" id="@item.value.connectorId" data-isrowsread="@(item.i == 0 ? true : false)">
+            @await Component.InvokeAsync("PGChildRows", new { id = item.value.connectorId, page = 1, isRowsRead = (item.i == 0 ? true : false), ctid = ViewBag.ctid })
+        </div>
+    }
+}
+
+@section Scripts{
+    <script type="text/javascript">
+
+        var url = window.location.pathname.split("")
+        
+        var connectorid = $("#connectorid")[0].innerText;
+        var params = new window.URLSearchParams(window.location.search);
+        var ctid = params.get('ctid');
+
+        //var recordsno = $("table > tbody > tr").length;
+
+        //for (var i = 0; i < recordsno; i++) {
+
+        //    var row = $("table > tbody > tr")[i];
+
+        //    var rowlength = row.children.length;
+
+
+
+        //    var marked_for_delete_value = row.children[rowlength - 1].innerText.trim();
+
+        //    if (marked_for_delete_value == "True") {
+
+        //        var checkboxstatus = row.children[0]
+
+        //        checkboxstatus.children[0].checked = true
+        //    }
+
+        //}
+        $('body').keypress(function (e) {
+            
+            if (e.which == 13) {
+                swal.close();
+            }
+        });
+        $("#Backbtn").click(function () {
+            
+            window.location.href = "/connector/getrows/" + parseInt(connectorid);
+        });
+        $('input[type=checkbox]').change(function () {
+            var checboxlength = $('input[type="checkbox"]').length;
+            var count = 0;
+            for (var i = 0; i < checboxlength; i++) {
+
+                if ($('input[type="checkbox"]')[i].checked == true) {
+
+                    count++;
+                }
+            }
+
+            $("#deleterecord").html("Record selected for delete: " + count);
+
+            if (count > 0) {
+
+                $('a[name=deleteselectedrecord]').css('opacity', '1');
+                $('a[name=deleteselectedrecord]').css('cursor', 'pointer');
+
+            }
+            else {
+                $('a[name=deleteselectedrecord]').css('opacity', '0.1');
+                $('a[name=deleteselectedrecord]').css('cursor', 'none');
+
+            }
+
+        });
+        $('a[name=deleteselectedrecord]').on("click", function (e) {
+            if ($('a[name=deleteselectedrecord]')[0].style.opacity == 1) {
+                var checboxlength = $('input[type="checkbox"]').length;
+                var count = 0;
+                for (var i = 0; i < checboxlength; i++) {
+
+                    if ($('input[type="checkbox"]')[i].checked == true) {
+
+                        count++;
+                    }
+                }
+                var checkitemsctid = [];
+
+
+                for (var i = 0; i < checboxlength; i++) {
+
+                    if ($('input[type="checkbox"]')[i].checked == true) {
+
+                        var parentrow = $('input[type="checkbox"]').parent().parent()[i];
+                        //let obj = {};
+                        //obj.ctid = parentrow.children[3].innerText.trim(),
+
+                        //    checitemsctid.push(obj);
+                        var length = parentrow.children.length;
+                      
+                        var ctidobj = {
+                            ctid: parentrow.children[length - 1].lastElementChild.innerText.trim()
+                        }
+                        //queryStr = { "ctidobj": ctidobj }
+                        checkitemsctid.push(ctidobj);
+
+                    }
+                }
+
+                var itemlist = JSON.stringify(checkitemsctid)
+                if ($('a[name=deleteselectedrecord]')[0].text == "Archieve & Delete All Selected Items") {
+                    Swal.fire({
+                        //title: 'Are you sure?',
+                        //closeOnClickOutside: false,
+                        allowOutsideClick: false,
+                        allowEnterKey: false, 
+                        closeOnEsc: false,
+                        text: "Selected " + count + " items will be Archived and then permanently deleted from Destination",
+                        icon: 'error',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Archieve & Delete'
+                    }).then((result) => {
+                        if (result.value) {
+                            e.preventDefault();
+                            showMask();
+                            if (itemlist.length > 0) {
+                                //showMask()
+                                //$.get("/connector/ArchieveRecordBeforeDelete?id=" + parseInt(connectorid) + "&itemlist=" + itemlist, function (data) {
+                                //    //hideMask();
+                                //    console.log(data);
+                                // if (data > 0) {
+                                $.get("/connector/DeleteRecordsReviewedByUser?id=" + parseInt(connectorid) + "&itemlist=" + itemlist + "&ctid=" + ctid, function (data) {
+                                    //hideMask();
+                                    console.log(data);
+                                    window.location.reload();
+                                }).always(function () {
+                                    hideMask();
+                                });
+                                //window.location.reload();
+                                //  }
+                                //})
+
+                            }
+                            //hideMask();
+                        }
+                    });
+                }
+                else {
+                    Swal.fire({
+                        //title: 'Are you sure?',
+                        text: "Selected " + count + " items will be permanently deleted from Destination since you have not selected the backup option in Process configuration",
+                        icon: 'error',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Delete permanently'
+                    }).then((result) => {
+                        if (result.value) {
+                            e.preventDefault();
+                            showMask();
+                            if (itemlist.length > 0) {
+                                //showMask();
+
+                                $.get("/connector/DeleteRecordsReviewedByUser?id=" + parseInt(connectorid) + "&itemlist=" + itemlist + "&ctid=" + ctid, function (data) {
+                                    //hideMask();
+                                    console.log(data);
+                                    window.location.reload();
+                                }).always(function () {
+                                    hideMask();
+                                });
+
+
+                            }
+                            //hideMask();
+                        }
+                    });
+                }
+            }
+        });
+
+        $(".page-link").on("click", function (e) {
+            console.log("pagechange");
+        })
+        $('#kt_table_1').on('page.dt', function () {
+            //alert("changed");
+            var checboxlength = $('input[type="checkbox"]').length;
+            
+            for (var i = 0; i < checboxlength; i++) {
+
+                if ($('input[type="checkbox"]')[i].checked == true) {
+
+                    $('input[type="checkbox"]')[i].checked = false;
+                }
+            }
+            $('a[name=deleteselectedrecord]').css('opacity', '0.1');
+            $('a[name=deleteselectedrecord]').css('cursor', 'none');
+            $("#deleterecord").html("Records selected for delete: 0");
+            $(".DTFC_Cloned > thead > tr > th")[0].className = "";
+            var fixedcolumn = $(".DTFC_LeftBodyLiner").children()[0];
+            fixedcolumn.children[0].children[0].children[0].className = "";
+
+        });
+        $('i[name=selectnewParent]').on('click', function (e) {
+
+            //alert("Select New Parent");
+
+            if ($(this)[0].style.color != "yellow") {
+
+               // alert("new");
+                
+                var parentrow = $(this).parent().parent()[0]
+                //var newctid = parentrow.children[parentrow.children.length - 1].innerText.trim();
+                var newctid = $(this).parent()[0].lastElementChild.innerText.trim();
+                //alert(newctid);
+                showMask();
+                $.get("/connector/ConfigureNewParentForDuplicates?id=" + parseInt(connectorid) + "&newctid=" + newctid + "&oldctid=" + ctid, function (data) {
+                    
+                    console.log(data);
+                    //window.location.reload();
+                    window.location.href = "/connector/GetDuplicateRows/" + parseInt(connectorid) + "?ctid=" + newctid;
+
+                    //window.location.href = "/connector/GetDuplicateRows/" + parseInt(connectorid) + "?ctid=" + newctid;
+                }).always(function () {
+                    hideMask();
+                });
+            }
+
+            
+
+        });
+
+        
+        function updatePaging(container) {
+
+            if ($ && container) {
+                $(container).find("ul.pagination")
+                    .addClass("pagination pagination-sm no-margin pull-right")
+                $(container).find(".box-body .header").click(function () {
+                    $header = $(this);
+                    $content = $header.next();
+                    $content.slideToggle(200, function () {
+                        if ($header.find("i").hasClass("collapse")) {
+
+                            var container = $(this).closest("div[name=etrows]");
+                            if ($("span[data-rowcount]")) {
+
+                                if (container.attr("data-isrowsread") && container.attr("data-isrowsread").toLowerCase() == "false") {
+                                    showMask();
+                                    $.ajax({
+                                        url: "/connector/getsyncrecordsbypageno/" + container.attr("id") + "?page=1",
+                                        method: "GET",
+                                        error: function (xhr, status, error) {
+                                            hideMask();
+                                            console.log(xhr);
+                                            console.log(status);
+                                            if (status == "timeout") {
+                                                container.find("tr[name=emptyrow] td").html("Request timeout!");
+                                            }
+                                        },
+                                        success: function (data) {
+                                            container.html(data);
+                                            container.attr("data-isrowsread", "true");
+                                            updatePaging(container);
+                                            $(container).find(".box-body .header").click();
+                                            $('#kt_table_1').DataTable(
+                                                {
+                                                    responsive: true,
+                                                    paging: false,
+                                                    searching: false,
+                                                    columnDefs: [
+                                                        {
+                                                            orderable: false
+                                                        }]
+                                                });
+                                            hideMask();
+                                        },
+                                        timeout: 60000 // sets timeout to 1 min
+                                    });
+                                }
+                            }
+                            $header.find("i").removeClass("collapse");
+                            $header.find("i").addClass("expand");
+                        }
+                        else {
+                            $header.find("i").removeClass("expand");
+                            $header.find("i").addClass("collapse");
+                        }
+                        $header.find("i:last").css({ marginTop: "-10px" });
+                    });
+                })
+                $(container).find("ul.pagination li a").each(function () {
+                    var aTag = $(this);
+                    var id = $(this).closest("ul").attr("data-id");
+                    var pageNo = aTag.attr('href').match(numRegex);
+                    var aHref = aTag.attr('href').match(charRegex);
+                    if (id && aHref.length > 0 && pageNo.length > 0)
+                        aTag.attr('href', aHref[0] + id + '?page=' + pageNo[0]);
+                });
+                $(container).find("ul.pagination").on("click", "li a", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showMask();
+                    var container = $(this).closest("div[name=etrows]");
+                    $.ajax({
+                        url: $(this).attr("href"),
+                        method: "GET",
+                        error: function (xhr, status, error) {
+                            hideMask();
+                            console.log(xhr);
+                            console.log(status);
+                            if (status == "timeout") {
+                                container.find("tr[name=emptyrow] td").html("Request timeout!");
+                            }
+                        },
+                        success: function (data) {
+                            container.html(data);
+                            updatePaging(container);
+                            $(container).find(".box-body .header").click();
+                            $('#kt_table_1').DataTable(
+                                {
+                                    responsive: true,
+                                    paging: false,
+                                    searching: false,
+                                    columnDefs: [
+                                        {
+                                            orderable: false
+                                        }]
+                                });
+                            hideMask();
+                        },
+                        timeout: 60000 // sets timeout to 1 min
+                    });
+                });
+            }
+        }
+
+        $(function () {
+
+           
+
+            $('#kt_table_1').DataTable(
+                {
+                    //responsive: true,
+                    //scrollY: "300px",
+                    scrollX: true,
+                    //scrollCollapse: true,
+                    paging: true,
+
+                    //autoWidth: false,
+                    columnDefs: [
+                        {
+                            orderable: false,
+                            targets: [0, 1]
+                        }
+                    ],
+                    scrollCollapse: true,
+
+                    fixedColumns: {
+                        leftColumns: 2,
+                         topRows: 1
+                    },
+                    fixedHeader: {
+                        leftColumns: 2,
+                    }
+                    
+                });
+            //table = $('#kt_table_1').DataTable(
+            //    {
+            //        //responsive: true,
+            //        //scrollY: "300px",
+            //        scrollX: true,
+            //        //scrollCollapse: true,
+            //        paging: true,
+
+            //        autoWidth: false,
+            //        columnDefs: [
+            //            {
+            //                orderable: false,
+            //                targets: 0
+            //            }
+            //        ]
+
+            //    });
+            //new $.fn.dataTable.FixedColumns(table, {
+            //    leftColumns: 2
+            //});
+            //updatePaging($("div[name=etrows]"));
+            //if ($(".box-body .header").first().length > 0)
+            //    $(".box-body .header").first().click();
+
+            
+            var row = $("table").children('tbody').children('tr:first')[0];
+
+            var rowlength = row.children.length;
+            if (row.children[rowlength - 1].innerText.trim() == ctid) {
+
+                row.style.fontWeight = "600";
+                var firstcolumnchild = row.children[0];
+                var secondcolumnchild = row.children[1];
+                firstcolumnchild.children[0].disabled = true;
+                firstcolumnchild.children[0].id = "parentrecord";
+                firstcolumnchild.children[0].title = "To delete this, you must assign another record from the list as golden record";
+                secondcolumnchild.children[0].style.color = "yellow";
+                secondcolumnchild.children[0].title = "";
+                //secondcolumnchild.children[0].id = "selectnewParent"
+            }
+            
+            var headerrow = $("table > thead > tr")[0];
+
+            headerrow.children[0].className = "";
+            headerrow.children[1].className = "";
+            
+            //var $tr = $("table").children('tbody').children('tr:first');
+            //var mySpecialRow = $tr.html();
+            //$tr.remove();
+
+            //var opts = {};
+            //opts.fnDrawCallback = function () {
+            //    $('table thead').append(mySpecialRow);
+            //    // or
+            //   // $('table tbody').prepend(mySpecialRow);
+            //};
+            $("#kt_table_1").DataTable().columns.adjust().draw();
+            $("#kt_table_1").DataTable().draw();
+            $(".DTFC_Cloned > thead > tr > th")[0].className = "";
+            var fixedcolumn = $(".DTFC_LeftBodyLiner").children()[0];
+            fixedcolumn.children[0].children[0].children[0].className = "";
+
+            $('th.sorting').on('click', function (e) {
+                
+                $("#kt_table_1").DataTable().columns.adjust().draw();
+            })
+            $('select[name = kt_table_1_length]').change(function (e) {
+                $(".DTFC_Cloned > thead > tr > th")[0].className = "";
+                var fixedcolumn = $(".DTFC_LeftBodyLiner").children()[0];
+                fixedcolumn.children[0].children[0].children[0].className = "";
+                $('a[name=deleteselectedrecord]').css('opacity', '0.1');
+                $('a[name=deleteselectedrecord]').css('cursor', 'none');
+                $("#deleterecord").html("Records selected for delete: 0");
+            });
+        });
+    </script>
+}

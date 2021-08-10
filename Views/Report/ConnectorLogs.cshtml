@@ -1,0 +1,224 @@
+﻿@using Microsoft.Extensions.Logging
+@using Dedup.ViewModels
+@using Dedup.Common
+@model IEnumerable<ConnectorLogs>
+
+    @{
+        ViewData["Title"] = "DeDup Logs";
+    }
+
+    <!-- Info boxes -->
+    <div class="row">
+        <!-- left column -->
+        <div class="col-md-9">
+            <div class="kt-portlet" style="padding:20px;">
+                @if (Model != null)
+                {
+                    foreach (var grpCtr in Model.OrderByDescending(p => p.sync_started_at).GroupBy(x => x.sync_connector_name))
+                    {
+                        if (grpCtr.FirstOrDefault().sync_started_at.HasValue || grpCtr.FirstOrDefault().sync_ended_at.HasValue)
+                        {
+                            <h4 style="background-color:#f7f7f7;font-size: 14px; font-weight:600; text-align: left; padding: 7px 6px; margin-top: 6px;margin-bottom: 3px;">
+                                @grpCtr.Key
+                            </h4>
+                            <div class="row no-pad-top">
+                                <div class="col-md-12 no-pad-top">
+                                    @if (grpCtr.FirstOrDefault().last_sync_at.HasValue && grpCtr.FirstOrDefault().last_sync_status.HasValue && grpCtr.FirstOrDefault().last_sync_status.Value > 0)
+                                    {
+                                        <p class="no-margin">
+                                            @if (grpCtr.FirstOrDefault().last_sync_status.Value == 1)
+                                            {
+                                                @*@($"{grpCtr.FirstOrDefault().last_sync_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: The last dedup was processing {Environment.NewLine}")*@
+                                                <script src="~/js/moment.js"></script>
+
+                                                <script type="text/javascript">
+
+                                            var local = moment.utc('@grpCtr.FirstOrDefault().last_sync_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                            document.writeln(local);
+                                                </script>
+                                                @($"[{LogLevel.Information}]: The last dedup was processing {Environment.NewLine}")
+
+                                            }
+                                            else if (grpCtr.FirstOrDefault().last_sync_status.Value == 2)
+                                            {
+                                                @*@($"{grpCtr.FirstOrDefault().last_sync_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: The last dedup completed {Environment.NewLine}")*@
+                                                <script src="~/js/moment.js"></script>
+
+                                                <script type="text/javascript">
+
+                                            var local = moment.utc('@grpCtr.FirstOrDefault().last_sync_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                            document.writeln(local);
+                                                </script>
+                                                @($"[{LogLevel.Information}]: The last dedup completed {Environment.NewLine}")
+
+                                            }
+                                            else if (grpCtr.FirstOrDefault().last_sync_status.Value == 3)
+                                            {
+                                                @*@($"{grpCtr.FirstOrDefault().last_sync_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: The last dedup failed {Environment.NewLine}")*@
+                                                <script src="~/js/moment.js"></script>
+
+                                                <script type="text/javascript">
+
+                                            var local = moment.utc('@grpCtr.FirstOrDefault().last_sync_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                            document.writeln(local);
+                                                </script>
+                                                @($"[{LogLevel.Information}]: The last dedup failed {Environment.NewLine}")
+
+                                            }
+                                            else if (grpCtr.FirstOrDefault().last_sync_status.Value == 10)
+                                            {
+                                                @*@($"{grpCtr.FirstOrDefault().last_sync_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: The last dedup interrupted {Environment.NewLine}")*@
+                                                <script src="~/js/moment.js"></script>
+
+                                                <script type="text/javascript">
+
+                                            var local = moment.utc('@grpCtr.FirstOrDefault().last_sync_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                            document.writeln(local);
+                                                </script>
+                                                @($"[{LogLevel.Information}]: The last dedup interrupted {Environment.NewLine}")
+
+                                            }
+                                            @*else if (grpCtr.FirstOrDefault().last_sync_status.Value == 9)
+                                                    @($"{grpCtr.FirstOrDefault().last_sync_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: The last sync restarted {Environment.NewLine}")
+                                                }*@
+                                        </p>
+                                    }
+                                    @if (grpCtr.FirstOrDefault().sync_started_at.HasValue)
+                                    {
+                                        <p class="no-margin">
+                                            @*@($"{grpCtr.FirstOrDefault().sync_started_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: DeDup started {Environment.NewLine}")*@
+                                            <script src="~/js/moment.js"></script>
+
+                                            <script type="text/javascript">
+
+                                    var local = moment.utc('@grpCtr.FirstOrDefault().sync_started_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                        document.writeln(local);
+                                            </script>
+                                            @($"[{LogLevel.Information}]: DeDup started {Environment.NewLine}")
+                                        </p>
+                                    }
+                                    @if (grpCtr.Where(p => p.sync_logs != null).Count() > 0)
+                                    {
+                                        @foreach (var log in grpCtr.Where(p => p.sync_logs != null).SelectMany(p => p.sync_logs))
+                                        {
+                                            if (log.IndexOf(".") != -1 && log.IndexOf("at Dedup") != -1)
+                                            {
+                                                @Html.Raw(log.Substring(0, log.IndexOf("at Dedup")))
+                                            }
+                                            else
+                                            {
+                                                <p class="no-margin wrapword">
+                                                    @Html.Raw(log)
+                                                </p>
+                                            }
+                                        }
+                                    }
+                                    @if (grpCtr.FirstOrDefault().sync_ended_at.HasValue)
+                                    {
+                                        <p class="no-margin">
+                                            @if (grpCtr.FirstOrDefault().sync_status.HasValue)
+                                            {
+                                                @if (grpCtr.FirstOrDefault().sync_status.Value == 1)
+                                                {
+                                                    @*@($"{grpCtr.FirstOrDefault().sync_ended_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: DeDup is processing {Environment.NewLine}")*@
+                                                    <script src="~/js/moment.js"></script>
+
+                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@grpCtr.FirstOrDefault().sync_ended_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                        document.writeln(local);
+                                                    </script>
+                                                    @($"[{LogLevel.Information}]: DeDup is processing {Environment.NewLine}")
+
+                                                }
+                                                else if (grpCtr.FirstOrDefault().sync_status.Value == 2)
+                                                {
+                                                    @*@($"{grpCtr.FirstOrDefault().sync_ended_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: DeDup completed {Environment.NewLine}")*@
+                                                    <script src="~/js/moment.js"></script>
+
+                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@grpCtr.FirstOrDefault().sync_ended_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                        document.writeln(local);
+                                                    </script>
+                                                    @($"[{LogLevel.Information}]: DeDup completed {Environment.NewLine}")
+
+                                                }
+                                                else if (grpCtr.FirstOrDefault().sync_status.Value == 3)
+                                                {
+                                                    @*@($"{grpCtr.FirstOrDefault().sync_ended_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: DeDup failed {Environment.NewLine}")*@
+                                                    <script src="~/js/moment.js"></script>
+
+                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@grpCtr.FirstOrDefault().sync_ended_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                        document.writeln(local);
+                                                    </script>
+                                                    @($"[{LogLevel.Information}]: DeDup failed {Environment.NewLine}")
+
+                                                }
+                                                else if (grpCtr.FirstOrDefault().sync_status.Value == 10)
+                                                {
+                                                    @*@($"{grpCtr.FirstOrDefault().sync_ended_at:yyyy-MM-dd HH:mm:ss.fff zzz} [{LogLevel.Information}]: DeDup interrupted {Environment.NewLine}")*@
+                                                    <script src="~/js/moment.js"></script>
+
+                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@grpCtr.FirstOrDefault().sync_ended_at').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss.000 Z');
+                                        document.writeln(local);
+                                                    </script>
+                                                    @($"[{LogLevel.Information}]: DeDup interrupted {Environment.NewLine}")
+
+                                                }
+                                            }
+                                        </p>
+                                    }
+                                    <p class="no-margin">
+                                        @if (grpCtr.FirstOrDefault().source_type == SourceType.Remove_Duplicates_from_a_Single_Table)
+                                        {
+                                            @($"Deduped table name : {@grpCtr.FirstOrDefault().deduped_table_name}")
+                                            <br />
+                                            @if (grpCtr.FirstOrDefault().sync_status.Value == 1)
+                                            {
+                                                @($"Records merged : {@grpCtr.FirstOrDefault().sync_count + @grpCtr.FirstOrDefault().sync_updated_count}")
+                                            }
+                                            <br />
+                                            @($"Total records scanned : {@grpCtr.FirstOrDefault().total_records_count}")
+                                            <br />
+                                            @($"Duplicate records deleted : {@grpCtr.FirstOrDefault().deduped_count}")
+                                            <br />
+                                            @($"Unique records retained : {@grpCtr.FirstOrDefault().unique_records_count}")
+                                        }
+                                        else
+                                        {
+                                            @*@($"Deduped table name: {@grpCtr.FirstOrDefault().deduped_table_name}")
+                                                <br />
+                                                @($"Inserted records: {@grpCtr.FirstOrDefault().sync_count}")
+                                                <br />
+                                                @($"Updated records: {@grpCtr.FirstOrDefault().sync_updated_count}")
+                                                <br />
+                                                @($"Copied records: {@grpCtr.FirstOrDefault().sync_count + @grpCtr.FirstOrDefault().sync_updated_count}")
+                                                <br />
+                                                @($"Duplicate records: {@grpCtr.FirstOrDefault().deduped_count}")
+                                                <br />
+                                                @($"Unique records: {@grpCtr.FirstOrDefault().unique_records_count}")*@
+                                            @($"Deduped table name : {@grpCtr.FirstOrDefault().deduped_table_name}")
+                                            <br />
+                                            @($"Records merged : {@grpCtr.FirstOrDefault().sync_count + @grpCtr.FirstOrDefault().sync_updated_count}")
+                                            <br />
+                                            @($"Total records scanned : {@grpCtr.FirstOrDefault().total_records_count}")
+                                            <br />
+                                            @($"Duplicate records deleted : {@grpCtr.FirstOrDefault().deduped_count}")
+                                            <br />
+                                            @($"Unique records retained : {@grpCtr.FirstOrDefault().unique_records_count}")
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+            <!-- /.box -->
+        </div>
+    </div>

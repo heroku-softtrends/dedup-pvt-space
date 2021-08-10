@@ -1,0 +1,318 @@
+﻿@using Dedup.ViewModels
+@using Dedup.Common
+@using Dedup.Extensions
+@model DatabaseConfig
+@{
+    ViewData["Title"] = "Database Configuration";
+}
+
+@section styles{
+    <style type="text/css">
+        .ui-tooltip {
+            white-space: nowrap;
+            max-width: none;
+        }
+
+        .form-group.has-error label[for], .form-group.has-error span[for] {
+            color: #dd4b39;
+        }
+    </style>
+}
+
+@if (Model != null)
+{
+    PlanInfos currentPlanFeatures = default(PlanInfos);
+    if (ViewBag.CurrentPlan.IsInitialized)
+    {
+        currentPlanFeatures = (PlanInfos)ViewBag.CurrentPlan;
+    }
+    <div class="row">
+        <div class="col-md-10">
+            <div class="kt-portlet">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(model => model.ccid)
+                    <div class="kt-form">
+                        <div class="kt-portlet__body">
+
+                            <div class="form-group">
+                                <label for="databaseType">Database Type</label>
+                                <select id="databaseType" class="form-control" name="databaseType" data-val="true" data-val-required="Please select a database type" style="width:74.5%;">
+                                    @foreach (DatabaseType dt in Enum.GetValues(typeof(DatabaseType)))
+                                    {
+                                        if (dt != DatabaseType.Azure_SQL)
+                                        {
+                                            switch (dt)
+                                            {
+                                                case DatabaseType.None:
+                                                    <option value="">Please select Database Type</option>
+                                                    break;
+                                                case DatabaseType.Heroku_Postgres:
+                                                case DatabaseType.Azure_Postgres:
+                                                case DatabaseType.AWS_Postgres:
+                                                case DatabaseType.Azure_SQL:
+                                                    if (Model.databaseType == dt)
+                                                    {
+                                                        <option value="@dt" selected="selected">@dt.ToString().Replace("_", " ")</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@dt">@dt.ToString().Replace("_", " ")</option>
+                                                    }
+                                                    break;
+                                                default:
+                                                    <option value="@dt" disabled="disabled">@dt.ToString().Replace("_", " ")</option>
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                </select>
+                                @Html.ValidationMessageFor(model => model.databaseType)
+
+                            </div>
+
+                            <div class="form-group">
+                                <label for="syncDefaultDatabaseUrl">Default Heroku Postgres Database URL(What DeDup will use to access the data source and destination tables)</label>
+                                <div class="row">
+                                    @if (string.IsNullOrEmpty(Model.syncDefaultDatabaseUrl))
+                                    {
+                                        @Html.TextAreaFor(model => model.syncDefaultDatabaseUrl, new { @class = "form-control", @style = "width:73%; margin-left:10px;", @placeholder = "Please enter database url", @row = 3 })
+                                    }
+                                    else
+                                    {
+                                        @Html.TextAreaFor(model => model.syncDefaultDatabaseUrl, new { @class = "form-control", @style = "width:73%; margin-left:10px;", @placeholder = "Please enter database url", @row = 3, @readonly = "readonly" })
+                                    }
+                                    <div class="col-md-2" name="db_action_container">
+                                        <table>
+                                            <tr style="white-space:nowrap;text-align:center !important;">
+                                                @*<td style="display:@(Model.databaseType == DatabaseType.Heroku_Postgres ? "inline-block" : "none");">
+                                                    <a href="javascript:void(0);" name="getDBUrl" title="Get DB URL from App">Get DB URL from App</a>&nbsp;|&nbsp;
+                                                </td>*@
+                                                <td style="display:@(string.IsNullOrEmpty(Model.syncDefaultDatabaseUrl) ? " none" : "inline-block");">
+                                                    <a href="javascript:void(0);" name="edit" title="Edit">Edit</a>&nbsp;|&nbsp;
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);" name="save" title="Save">Save</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.syncDefaultDatabaseUrl)
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-9 margin-bottom">
+                                    <span id="lblMessage"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts{
+    <script src="~/js/bundlejueryval.min.js" type="text/javascript"></script>
+    <script src="~/js/site-validation.js"></script>
+    <script type="text/javascript">
+        var databaseConfig = {};
+
+        $(function () {
+            setTitleByDBType($("select[name=databaseType]").val());
+
+            $("select[name=databaseType]").on("change", function (e) {
+                var databaseType = $(this).val().trim();
+                setTitleByDBType(databaseType);
+                showMask();
+                $("#syncDefaultDatabaseUrl-error").html('');
+                $("textarea").each(function () {
+                    $(this).val('');
+                });
+
+                $.post('/config/getdbconfig', { databaseType: databaseType }, function (response) {
+                    if (response) {
+                        Object.keys(response).filter(function (key) {
+                            var val = response[key] || "";
+                            if (typeof (val) == "string") {
+                                if ($.trim(val) != "") {
+                                    $("textarea[name=" + key + "]").attr("readonly", "readonly").val(val);
+                                }
+                            }
+                        });
+                    }
+
+                    $("div[name=db_action_container] table td a").each(function () {
+                        $(this).closest("td").hide();
+                        if ("@DatabaseType.Heroku_Postgres" == databaseType) {
+                            $(this).closest("td").show();
+                        }
+                        else if ($(this).attr("name") != "getDBUrl") {
+                            $(this).closest("td").show();
+                        }
+                        if ($(this).attr("name") == "edit" && $.trim($(this).closest(".row").find(".form-control").val()) == "") {
+                            $(this).closest("td").hide();
+                        }
+                    });
+                }, 'json').always(function () {
+                    setTitleByDBType(databaseType);
+                    hideMask();
+                });
+            });
+
+            $("a[name=edit]").on("click", function (e) {
+                e.preventDefault();
+                var inputTag = $(this).closest(".row").find(".form-control");
+
+                if ($(inputTag).attr("readonly")) {
+                    $(inputTag).removeAttr("readonly");
+                    $(this).html("Cancel");
+                    databaseConfig[inputTag[0].name] = inputTag[0].value;
+                }
+                else {
+                    if (databaseConfig.hasOwnProperty(inputTag[0].name) && databaseConfig[inputTag[0].name] != "" && databaseConfig[inputTag[0].name] != inputTag[0].value) {
+                        inputTag[0].value = databaseConfig[inputTag[0].name];
+                        inputTag.valid();
+                        databaseConfig = {};
+                    }
+                    if ($.trim(inputTag[0].value) != "") {
+                        $(inputTag).attr("readonly", "readonly");
+                        $(this).html("Edit");
+                    }
+                }
+
+                $(this).closest("td").hide();
+                if ($.trim(inputTag[0].value) != "") {
+                    $(this).closest("td").show();
+                }
+                var data=$(inputTag).val();
+                $(inputTag).focus().val('').val(data);
+            });
+
+            $("a[name=save]").on("click", function (e) {
+                e.preventDefault();
+                var inputTag = $(this).closest(".row").find(".form-control");
+                var editTag = $(this).closest(".row").find("a[name=edit]");
+                if ($.trim(inputTag.val()).length == 0) {
+                    inputTag.valid();
+                    return;
+                }
+                showMask();
+                databaseConfig["databaseType"] = $("select[name=databaseType]").val();
+                databaseConfig["ccid"] = $("input[name=ccid]").val();
+                databaseConfig[inputTag[0].name] = inputTag[0].value;
+                if (inputTag[0].name == "syncDefaultDatabaseUrl")
+                    databaseConfig["syncFollowerDatabaseUrl"] = $("textarea[name=syncFollowerDatabaseUrl]").val();
+                else if (inputTag[0].name == "syncFollowerDatabaseUrl")
+                    databaseConfig["syncDefaultDatabaseUrl"] = $("textarea[name=syncDefaultDatabaseUrl]").val();
+                var dbMsgText = "@DatabaseType.Azure_SQL" == databaseConfig["databaseType"] ? "connection string" : "url";
+                $.post("/config/dbconfig", databaseConfig,
+                function (data, status) {
+                    console.log(data);
+                    databaseConfig = {};
+                    if (data.status) {
+                        if (data.status == 200 && inputTag.length > 0) {
+                            if (inputTag[0].name == "syncDefaultDatabaseUrl") {
+                                Swal.fire('', "The default database " + dbMsgText + " has saved successfully.", 'warning');
+                                //showAlert("", "Info");
+                            }
+                            else if (inputTag[0].name == "syncFollowerDatabaseUrl") {
+                                Swal.fire('', "The default database " + dbMsgText + " has saved successfully.", 'warning');
+                                //showAlert("The follower database " + dbMsgText + " has saved successfully.", "Info");
+                            }
+                            $(editTag).click();
+                        }
+                        else {
+                            if (inputTag[0].name == "syncDefaultDatabaseUrl") {
+                                Swal.fire('', "The default database " + dbMsgText + " has saved successfully.", 'error');
+                                // showAlert("The default database " + dbMsgText + " has not saved.", "Error");
+                            }
+                            else if (inputTag[0].name == "syncFollowerDatabaseUrl") {
+                                Swal.fire('', "The follower database " + dbMsgText + " has not saved.", 'error');
+                            }
+                            //showAlert("The follower database " + dbMsgText + " has not saved.", "Error");
+                        }
+                    }
+                    }).always(function () {
+                        hideMask();
+                    });
+                //}).error(function (error, status) {
+                //    databaseConfig = {};
+                //    console.log(error);
+
+            });
+
+            $('[name=getDBUrl]').click(function (e) {
+                e.preventDefault();
+                var inputTag = $(this).closest(".row").find(".form-control");
+                showMask();
+                $.post('/config/getconfigvar?name=DATABASE_URL', null, function (response) {
+                    if (response.value && inputTag) {
+                        inputTag[0].value = response.value;
+                    }
+                    else {
+                        Swal.fire('', "No Postgres DB attached to the app to get URL.", 'error');
+                        //showAlert("DATABASE_URL is not added.", "Error");
+                    }
+                }, 'json').always(function () {
+                    hideMask();
+                });
+            });
+
+            $("a[name='delconfig']").on("click", function (e) {
+                e.preventDefault();
+                var returnUrl = $(this).attr("href");
+                doConfirm("Are you sure you wish to delete database config?", function yes() {
+                    location.href = returnUrl;
+                }, function no() {
+                    return false;
+                });
+            });
+        });
+
+        function setTitleByDBType(databaseType) {
+            if (databaseType == "") {
+                $("textarea").each(function () {
+                    $(this).val('');
+                });
+                $("div[name=maincontentcontainer] section[class=content-header] h1").html("Add Heroku Postgres Configuration");
+                $("label[for=syncDefaultDatabaseUrl]").html("Default Heroku Postgres Database URL(What DeDup will use to access the data source and destination tables)&nbsp;&nbsp;<i data-toggle=\"tooltip\" data-placement=\"right\" title=\"postgres://{userId}:{password}@@{host}:{port}/{database}\" style=\"color: #0099CC;\"></i>");
+                $("label[for=syncFollowerDatabaseUrl]").html("Follower Heroku Postgres Database URL(where Connector Data will be replicated to) - OPTIONAL&nbsp;&nbsp;<i class=\"fa fa-info-circle\" data-toggle=\"tooltip\" data-placement=\"right\" title=\"postgres://{userId}:{password}@@{host}:{port}/{database}\" style=\"color: #0099CC;\"></i>");
+                return;
+            }
+            else {
+                var dbType = "Heroku Postgres";
+                var dbConStrType = "URL";
+                var dbFormat = "&nbsp;&nbsp;<i data-toggle=\"tooltip\" data-placement=\"right\" title=\"postgres://{userId}:{password}@@{host}:{port}/{database}\" style=\"color: #0099CC;\"></i>";
+                if ("@ConnectorType.Azure_Postgres" == databaseType) {
+                    dbType = "Azure Postgres";
+                }
+                else if ("@ConnectorType.AWS_Postgres" == databaseType) {
+                    dbType = "AWS Postgres";
+                }
+                else if ("@ConnectorType.Azure_SQL" == databaseType) {
+                    dbType = "Azure Sql";
+                    dbConStrType = "Connection String";
+                    dbFormat = "&nbsp;&nbsp;<i data-toggle=\"tooltip\" data-placement=\"right\" title=\"Server={server};Initial Catalog={database};User ID={userId};Password={password};Encrypt={True/False};TrustServerCertificate={True/False};\" style=\"color: #0099CC;\"></i>";
+                }
+                $("div[name=maincontentcontainer] section[class=content-header] h1").html(dbType + " Configuration");
+                $("label[for=syncDefaultDatabaseUrl]").html("Default " + dbType + " Database " + dbConStrType + "(What DeDup will use to access the data source and destination tables)" + dbFormat);
+                $("label[for=syncFollowerDatabaseUrl]").html("Follower " + dbType + " Database " + dbConStrType + "(where Connector Data will be replicated to) - OPTIONAL" + dbFormat);
+
+                $("form").removeData("validator");
+                $("textarea").each(function () {
+                    $(this)
+                        .removeAttr("readonly")
+                        .attr({
+                            "placeholder": "Please enter" + ("syncDefaultDatabaseUrl" == $(this).attr("name") ? " " : " follower ") + "database " + (databaseType == "@DatabaseType.Azure_SQL" ? "connection string" : "url"),
+                            "data-val-required": ("syncDefaultDatabaseUrl" == $(this).attr("name") ? "" : "Follower ") + "Database " + (databaseType == "@DatabaseType.Azure_SQL" ? "Connection String" : "Url") + " Is Required"
+                        });
+                });
+                $.validator.unobtrusive.parse(document);
+            }
+        }
+    </script>
+}

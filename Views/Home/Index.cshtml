@@ -1,0 +1,1118 @@
+﻿@using Dedup.ViewModels
+@using Dedup.Common
+@using Dedup.Extensions
+@model IEnumerable<ConnectorConfig>
+@{
+    bool isLicenseAccepted = false;
+    bool isPrivatePlan = false;
+    string appName = Context.GetClaimValue(Dedup.Common.Constants.HEROKU_MAIN_APP_NAME);
+    //bool isPlanInfoAvail = false;
+    PlanInfos currentPlanFeatures = default(PlanInfos);
+
+    if (ViewBag.CurrentPlan.IsInitialized)
+    {
+        isLicenseAccepted = ((PlanInfos)ViewBag.CurrentPlan).isLicenseAccepted;
+        currentPlanFeatures = (PlanInfos)ViewBag.CurrentPlan;
+        isPrivatePlan = currentPlanFeatures.is_private_space;
+        // isPlanInfoAvail = true;
+    }
+
+    ViewData["Title"] = isLicenseAccepted ? "Dedup Process List" : "";
+
+}
+<style>
+
+    .not-active {
+        pointer-events: none;
+        opacity: 0.6;
+        cursor: not-allowed;
+        color: gray;
+        text-decoration: none;
+    }
+
+    .progress {
+        height: 15px;
+        margin-bottom: 0px;
+        overflow: hidden;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,.1)
+    }
+
+    .progress-bar {
+        float: left;
+        width: 0%;
+        height: 100%;
+        font-size: 12px;
+        line-height: 20px;
+        color: #fff;
+        text-align: center;
+        background-color: #337ab7;
+        -webkit-box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
+        -webkit-transition: width .6s ease;
+        -o-transition: width .6s ease;
+        transition: width .6s ease
+    }
+
+    .progress-bar-striped, .progress-striped .progress-bar {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-size: 40px 40px
+    }
+
+    .progress-bar.active, .progress.active .progress-bar {
+        -webkit-animation: progress-bar-stripes 2s linear infinite;
+        -o-animation: progress-bar-stripes 2s linear infinite;
+        animation: progress-bar-stripes 2s linear infinite
+    }
+
+    .progress-bar-success {
+        background-color: #5cb85c
+    }
+
+    .progress-striped .progress-bar-success {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)
+    }
+
+    .progress-bar-info {
+        background-color: #5bc0de
+    }
+
+    .progress-striped .progress-bar-info {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)
+    }
+
+    .progress-bar-warning {
+        background-color: #f0ad4e
+    }
+
+    .progress-striped .progress-bar-warning {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)
+    }
+
+    .progress-bar-danger {
+        background-color: #d9534f
+    }
+
+    .progress-striped .progress-bar-danger {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)
+    }
+
+    a[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        top: -100%;
+        left: 0;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <div class="kt-portlet" style="padding:20px;">
+            <div class="kt-portlet kt-portlet--height-fluid kt-portlet--mobile">
+                <div class="kt-portlet__body kt-portlet__body--fit">
+                    @if (isLicenseAccepted)
+                    {
+                        <table name="connectors" class="table table-striped- table-bordered table-hover table-checkable" id="kt_table_1">
+                            <thead>
+                                <tr>
+                                    <th>
+
+                                    </th>
+
+                                    <th style="width:30% !important">
+                                        Process Name
+                                    </th>
+                                    @*<th>
+                                            Source Type
+                                        </th>*@
+                                    <th style="width:10% !important">
+                                        Similarity %
+                                    </th>
+                                    @*<th>
+                                            Source Name
+                                        </th>*@
+                                    <th style="width:10% !important">
+                                        Schedule
+                                    </th>
+                                    @*<th style="text-align:center !important;width:12% !important">
+                                            Execution Mode
+                                        </th>*@
+                                    <th style="text-align:center !important;width:12% !important">
+                                        Number of tables
+                                    </th>
+                                    <th style="text-align:center !important;width:18% !important">
+                                        Last Execution Status
+                                    </th>
+                                    <th style="text-align:center !important;width:10% !important">
+                                        Config
+                                    </th>
+
+
+                                    <th style="width:10% !important">Actions</th>
+
+                                    @if (Model != null && Model.Count() > 0)
+                                    {
+                                        <th class="none" style="text-align:center !important">
+                                            Dedup Process Type
+                                        </th>
+                                        <th class="none" style="text-align:center !important;display:block !important">
+                                            Similarity Method
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Review before deleting
+                                        </th>
+                                        <th class="none" style="text-align:center !important;display:block !important">
+                                            Archieve deleted records
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            First source table
+                                        </th>
+                                        <th class="none" style="text-align:center !important;display:block !important">
+                                            Second source table
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Destination table
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Fields to Compare
+                                        </th>
+                                        @*<th class="none" style="text-align:center !important">
+                                                Total Records Scanned
+                                            </th>
+                                            <th class="none" style="text-align:center !important">
+                                                Duplicate Records Found
+                                            </th>*@
+                                        <th class="none" style="text-align:center !important">
+                                            Total New Records Merged
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Total Updated Merged
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Total Records Deduped
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Duplicate Records Deleted
+                                        </th>
+                                        <th class="none" style="text-align:center !important">
+                                            Duplicate Records Remaining
+                                        </th>
+                                    }
+                                </tr>
+
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count() > 0)
+                                {
+                                    @foreach (var app in Model)
+                                    {
+                                        <tr id="@app.connectorId" data-sync-status="@app.syncStatus">
+                                            <td name="displaymore"></td>
+                                            <td align="left">
+                                                @app.connectorName
+                                            </td>
+                                            @*<td align="left">
+                                                    @string.Format("{0}", app.dataSource).Replace("_", " ")
+                                                </td>*@
+                                            <td align="left">
+                                                @app.fuzzy_ratio
+                                            </td>
+                                            @*<td align="left">
+                                                    @app.sourceObjectName
+                                                </td>*@
+                                            <td align="left">
+                                                @if (app.scheduleType == ScheduleType.MANUAL_SYNC)
+                                                {
+                                                    <span>Manual</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@app.scheduleType</span>
+                                                }
+                                            </td>
+                                            <td style="white-space:nowrap;text-align:center !important;display:block !important">
+                                                @*@if (app.dedup_type == DedupType.Full_Dedup)
+                                                    {
+
+                                                        <span class=@(app.syncStatus == 1 ? "not-active" : "")>Real Dedup</span><br />
+
+                                                        <span style="visibility:@(app.syncStatus == 1?"visible":"hidden");">Stop</span>
+                                                    }
+                                                    else
+                                                    {
+
+                                                        <span class=@(app.syncStatus == 1 ? "not-active" : "")>Simulate</span><br />
+
+                                                        <a href="javascript:void(0);" data-disabled="false" name="cleardata" data-name="@app.connectorName" data-id="@app.connectorId" data-uuid="@app.ccid" data-type="simulate"
+                                                           title="Once you finalized then it will become dedup after that you cannot revert back to simulate">@(app.syncStatus == 1 ? "Stop" : "Switch to Real")</a>
+
+                                                    }*@
+                                                @if (app.dedupSourceType == SourceType.Merge_Table_A_Data_to_Table_B_and_Remove_Duplicates_from_Table_B)
+
+                                                {
+                                                    <a href="#" title="@app.dbConfig.object_name, @app.dbConfig_compare.object_name">2 Tables</a>
+                                                }
+                                                else
+                                                {
+                                                    <a href="#" title="@app.dbConfig.object_name">1 Table</a>
+                                                }
+                                            </td>
+                                            <td style="text-align:center !important;" name="DedupStatus">
+                                                @if (app.syncStatus.HasValue)
+                                                {
+                                                    switch (app.syncStatus.Value)
+                                                    {
+                                                        case 0:
+                                                            <div name="syncStatus">Not Started</div>
+                                                            break;
+                                                        case 1:
+                                                            <div name="syncStatus">
+                                                                <div class="info-box bg-aqua" style="min-height:30px">
+                                                                    <div class="info-box-content" style="margin-left:0px">
+                                                                        <div class="progress" id="progresbar">
+                                                                            <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 100%;"></div>
+                                                                        </div>
+                                                                        @if (app.syncCount.HasValue)
+                                                                        {
+                                                                            <span class="progress-description">
+                                                                                @app.syncCount.Value records merged
+                                                                            </span>
+                                                                        }
+                                                                    </div><!-- /.info-box-content -->
+                                                                </div>
+                                                            </div>
+                                                            break;
+                                                        case 2:
+                                                            <div name="syncStatus">
+                                                                Completed
+                                                                @if (app.syncEndedAt.HasValue)
+                                                                {
+                                                                    <br />
+                                                                    @*@Html.Raw(string.Format("<br />{0}", app.syncEndedAt.Value.ToLocalTime().ToString("yyyy-MM-dd hh:mm:ss tt")))*@
+                                                                    @*<script type="text/javascript">
+
+                                                                                document.writeln(convertToLocalTime('@app.syncEndedAt'));
+                                                                        </script>*@
+                                                                    <script src="~/js/moment.js"></script>
+
+                                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@app.syncEndedAt').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A');
+                                        document.writeln(local);
+                                                                    </script>
+                                                                    <br />
+                                                                    @if (app.unique_records_count == null)
+                                                                    {
+                                                                        app.unique_records_count = 0;
+                                                                    }
+                                                                    <span>@app.total_records_count Total records Deduped</span><br />
+                                                                    <span>@app.deduped_count Duplicates records deleted</span><br />
+                                                                    <span>@(app.total_records_count - app.unique_records_count) Duplicate records remaining</span>
+                                                                }
+                                                            </div>
+                                                            break;
+                                                        case 3:
+                                                            <div name="syncStatus">
+                                                                Failed
+                                                                @if (app.syncEndedAt.HasValue)
+                                                                {
+                                                                    @*@Html.Raw(string.Format("<br /> at {0}", app.syncEndedAt.Value.ToLocalTime().ToString("yyyy-MM-dd hh:mm:ss tt")))*@
+                                                                    <br />
+                                                                    <script src="~/js/moment.js"></script>
+
+                                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@app.syncEndedAt').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A');
+                                        document.writeln(local);
+                                                                    </script>
+
+                                                                }
+                                                            </div>
+                                                            break;
+                                                        case 10:
+                                                            <div name="syncStatus">
+                                                                Interrupted
+                                                                @if (app.syncEndedAt.HasValue)
+                                                                {
+                                                                    @*@Html.Raw(string.Format("<br /> at {0}", app.syncEndedAt.Value.ToLocalTime().ToString("yyyy-MM-dd hh:mm:ss tt")))*@
+                                                                    <br />
+                                                                    <script src="~/js/moment.js"></script>
+
+                                                                    <script type="text/javascript">
+
+                                        var local = moment.utc('@app.syncEndedAt').utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A');
+                                        document.writeln(local);
+                                                                    </script>
+                                                                    <br />
+                                                                    @if (app.unique_records_count == null)
+                                                                    {
+                                                                        app.unique_records_count = 0;
+                                                                    }
+                                                                    <span>@app.total_records_count Total records Deduped</span><br />
+                                                                    <span>@app.deduped_count Duplicates records deleted</span><br />
+                                                                    <span>@(app.total_records_count - app.unique_records_count) Duplicate records remaining</span>
+                                                                }
+                                                            </div>
+                                                            break;
+                                                    }
+                                                    @*@Html.ActionLink("View", "getrows", "connector", new { id = app.connectorId }, new { @title = "View all deduped rows", @class = (app.syncStatus == 1 ? "not-active" : "") })*@
+                                                    @if (app.review_before_delete == ReviewBeforeDeleteDups.Yes && (app.syncStatus.Value == 2 || app.syncStatus.Value == 10))
+                                                    {
+                                                        @*@Html.ActionLink("Review & Delete", "getrows", "connector", new { id = app.connectorId }, new { @title = "View all deduped rows", @class = (app.syncStatus == 1 ? "not-active" : "") })*@
+                                                        <a class="getrows" href='/connector/getrows/@app.connectorId' title='View all deduped rows'>Review & Delete</a>
+                                                    }
+                                                    @*@Html.ActionLink("Review & Delete", "getrows", "connector", new { id = app.connectorId }, new { @title = "View all deduped rows", @class = (app.syncStatus == 1 ? "not-active" : "") })*@
+
+                                                }
+                                                else
+                                                {
+                                                    <div name="syncStatus">Not Started</div>
+                                                }
+                                            </td>
+                                            <td style="white-space:nowrap;text-align:center !important;">
+                                                @Html.ActionLink("Edit", "index", "connector", new { id = app.connectorId, ccid = app.ccid }, new { @class = (app.syncStatus == 1 ? "not-active" : "") }) &nbsp;|&nbsp;
+                                                @*@Html.ActionLink("Delete", "delete", "connector", new { id = app.connectorId, ccid = app.ccid }, new { @class = (app.syncStatus == 1 ? "not-active" : ""), onclick = "return ConfirmDedupProcess('" + app.connectorName + "')" })*@
+
+
+
+                                                @*<td align="left">
+                                                        @string.Format("{0}", app.syncDestination).Replace("_", " ")
+                                                    </td>*@
+
+                                                <a href="javascript:void(0);" name="deletedata" data-id="@app.connectorId" data-uuid="@app.ccid"
+                                                   class=@(app.syncStatus == 1 ? "not-active" : "")>Delete</a>
+                                            </td>
+
+                                            <td>
+                                                @if (app.dedup_type == DedupType.Simulate_and_Verify)
+                                                {
+                                                    @*<span>Simulate</span>*@
+                                                    @*<a href="javascript:void(0);" name="syncdata" data-id="@app.connectorId" data-uuid="@app.ccid"
+                                                        title="Simulate and verify your data" class=@(app.syncStatus == 1 ? "not-active" : "")>Simulate</a>*@
+                                                    <a href="javascript:void(0);" name="syncdata" data-id="@app.connectorId" data-uuid="@app.ccid"
+                                                       title="Simulate and verify your data" class=@(app.syncStatus == 1 ? "not-active" : "")>Dedup</a>
+                                                    <a href="javascript:void(0);" data-disabled="false" name="cleardata" data-name="@app.connectorName" data-id="@app.connectorId" data-uuid="@app.ccid" data-type="simulate"
+                                                       title="Once you finalized then it will become dedup after that you cannot revert back to simulate">@(app.syncStatus == 1 ? "Stop" : "")</a>
+
+                                                }
+                                                else
+                                                {
+                                                    @*<span>Real Dedup</span>*@
+                                                    <a href="javascript:void(0);" name="syncdata" data-id="@app.connectorId" data-uuid="@app.ccid"
+                                                       title="DeDup the configured table" class=@(app.syncStatus == 1 ? "not-active" : "")>Dedup</a><br />
+                                                    <a href="javascript:void(0);" data-disabled="false" name="cleardata" data-name="@app.connectorName" data-id="@app.connectorId" data-uuid="@app.ccid" data-type="dedup"
+                                                       title="Terminate the ruuning background process" style="visibility:@(app.syncStatus == 1?"visible":"hidden");">Stop</a>
+                                                    @*<a href="javascript:void(0);" data-disabled="false" name="cleardata" data-name="@app.connectorName" data-id="@app.connectorId" data-uuid="@app.ccid" data-type="simulate"
+                                                        title="Once you finalized then it will become dedup after that you cannot revert back to simulate">@(app.syncStatus == 1 ? "Stop" : "Switch to Real")</a>*@
+
+                                                }
+                                            </td>
+
+
+                                            <td>
+                                                @*@app.dedupSourceType*@
+
+                                                @if (app.dedupSourceType == SourceType.Remove_Duplicates_from_a_Single_Table)
+
+                                                {
+                                                    <span>Remove Duplicates from Source</span>
+                                                }
+                                                else
+                                                {
+                                                    @app.dedupSourceType
+                                                }
+                                            </td>
+                                            <td>@app.dedup_method</td>
+                                            <td>@app.review_before_delete</td>
+                                            <td>@app.backup_before_delete</td>
+                                            <td>@app.sourceObjectName</td>
+                                            <td>
+                                                @if (app.dbConfig_compare.object_name != null)
+                                                {
+
+                                                    <span>@app.dbConfig_compare.object_name</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>None</span>
+                                                }
+
+                                            </td>
+                                            <td>@app.destObjectName</td>
+                                            <td>
+                                                @foreach (var item in app.compareObjectFieldsMapping)
+                                                {
+                                                    @if (item == app.compareObjectFieldsMapping[app.compareObjectFieldsMapping.Count - 1])
+                                                    {
+                                                        <span>@item</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@item, </span>
+                                                    }
+                                                }
+                                            </td>
+                                            @*<td>
+                                                    @if (!app.syncStatus.HasValue)
+                                                    {
+                                                        <span>N/A</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @app.total_records_count
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!app.syncStatus.HasValue)
+                                                    {
+                                                        <span>N/A</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @app.deduped_count
+                                                    }
+                                                </td>*@
+                                            <td>
+                                                @if (!app.syncStatus.HasValue)
+                                                {
+                                                    <span>0</span>
+                                                }
+                                                else
+                                                {
+                                                    @app.syncCount
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!app.syncStatus.HasValue)
+                                                {
+                                                    <span>0</span>
+                                                }
+                                                else
+                                                {
+                                                    @app.sync_updated_count
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!app.syncStatus.HasValue)
+                                                {
+                                                    <span>0</span>
+                                                }
+                                                else
+                                                {
+
+                                                    @app.total_records_count
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!app.syncStatus.HasValue)
+                                                {
+                                                    <span>0</span>
+                                                }
+                                                else
+                                                {
+                                                    @app.deduped_count
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!app.syncStatus.HasValue)
+                                                {
+                                                    <span>0</span>
+                                                }
+                                                else
+                                                {
+                                                    @(app.total_records_count - app.unique_records_count)
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="6" align="center">No connectors found!</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="row" id="dedup_termsofuse">
+                            <div class="col-md-12">
+                                <div class="kt-portlet" style="margin-bottom:unset !important;">
+                                    <div class="kt-form">
+                                        <div class="kt-portlet__body">
+                                            <div class="kt-section kt-section--first" style="margin:0px !important">
+                                                <div id="jobs" class="block block-secondary p-b" style="padding-top:20px;">
+                                                    <div class="container">
+                                                        <div class="row app-align-center">
+                                                            <div class="col-sm-12 text-center">
+                                                                <h3 class="m-t-0"><strong>TERMS OF USE</strong></h3>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">General Terms</h5>
+                                                        <p class="m-t-0">This agreement sets the terms and conditions (“TERMS”) for Your use of the cloud hosted software application offered through on-line Marketplaces namely Heroku Elements Marketplace, Google Cloud Marketplace (“MARKETPLACE”), including any modifications or future enhancements to the software applications DeDup (“DEDUP”) as well as any additional services relating to the use of such Software that are generally provided by Soft trends LLC., a Georgia corporation with its principal place of business at 6825 Jimmy Carter Blvd, Suite 1650-O, Norcross, Georgia 30071 (“SOFTTRENDS”).</p>
+                                                        <p class="m-t-0">
+                                                            In order to use the DEDUP, you must review the TERMS and once satisfied, subscribe to DEDUP from the MARKETPLACE. You understand and agree that your subscription of DEDUP will be treated by SOFTTRENDS as your acceptance of the TERMS. If you have agreed to the Terms for any other service provided by SOFTTRENDS, it will not apply to DEDUP. You may not subscribe to DEDUP if you are barred from using DEDUP under the laws of the United States or other countries, including the country in which you are resident or from which you use DEDUP.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You agree that the purchases of DEDUP subscription is not contingent on SOFTTRENDS delivering any future functionality or features with DEDUP and this term supersedes any written or oral commitments you might have received from SOFTTRENDS.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            SOFTTRENDS reserves the right, at its sole discretion, to modify, add or remove portions of these TERMS at any time without notice. You are responsible for checking the TERMS from time to time for changes. Your continued use of DEDUP following changes to the TERMS will mean that you accept and agree to the changes.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You may use DEDUP for the purpose of developing and running applications to access your own data that does not result in intellectual property infringement and you agree not to bring any such claim against SOFTTRENDS.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">License from SOFTTRENDS</h5>
+                                                        <p class="m-t-0">
+                                                            Once you subscribe to DEDUP, SOFTTRENDS gives you a personal, worldwide, royalty-free, non-assignable and non-exclusive license to DEDUP, and solely for your own personal or internal business purposes which shall not include redistributing or otherwise allowing any third parties to access or use DEDUP. You may not directly or indirectly copy, modify, reverse engineer, or otherwise attempt to extract the source code of DEDUP or any part thereof, unless it is expressly permitted or required by law, or you have been specifically told that you may do so by SOFTTRENDS, in writing.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            Except for the limited rights granted in this section, SOFTTRENDS retains all right, title and interest in and to DEDUP, and all intellectual property rights therein and thereto. Nothing in this Agreement shall constitute a transfer of any ownership rights by SOFTTRENDS to you in DEDUP or otherwise. All rights in DEDUP not expressly granted hereunder are reserved by SOFTTRENDS.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Fees</h5>
+                                                        <p class="m-t-0">
+                                                            SOFTTRENDS offers multiple paid subscription Plans through the MARKETPLACE with specified features and usage and cost that are generally available to you. In addition, SOFTTRENDS offers Custom Plans in DEDUP offered through MARKETPLACE that may have additional features, usage available specifically for you. These Custom plans will have a subscription fee different than the generally available Plans, and may also have one-time customization fee as agreed between you and SOFTTRENDS through a separate agreement.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You subscribe to a plans by agreeing to the Order Forms presented by the MARKETPLACE. By entering into an Order Form hereunder, you agree to be bound by the TERMS of this Agreement. You understand that fees are based on subscription purchased and not actual usage and the payment obligations are non-cancelable and fees paid are non-refundable. Subscription fees are based on monthly periods that begin on the subscription start date and each monthly anniversary thereof until you terminate your subscription for DEDUP.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You hereby authorize us (or our hosting partner’s MARKETPLACE acting on our behalf) to charge You the applicable Subscription Fees using Your credit card (unless other payment method was expressly agreed to in writing between the parties hereto).
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Third Party Providers</h5>
+                                                        <p class="m-t-0">
+                                                            You acknowledge that SOFTTRENDS uses cloud infrastructure services and resource from third parties including Heroku, Amazon Web services, Microsoft Azure, Google Cloud services ( collectively known as “THIRD-PARTIES” and individually known as “THIRD-PARTY”) in order to provide the functionality in DEDUP. Which THIRD-PARTY you use depends on the feature in DEDUP you select. You acknowledge and agree that SOFTTRENDS is not and shall not be responsible for the availability, performance or security of these THIRD-PARTIES services or resources, and SOFTTRENDS shall not be held liable for any loss or damage (including loss of data and/or loss of profits), which may be incurred by You, as a result of the lack of availability of, the interruptions or errors in the performance of, and any other problem in those THIRD-PARTIES services or resources, or as a result of the lack of availability of, the interruptions or errors in the performance of, and any other problem in such THIRD-PARTIES services or resources.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You acknowledge and agree that Your right to use such service and resources provided by THIRD-PARTIES in connection with DEDUP is subject to and governed by the terms and conditions of those THIRD-PARTIES including, without limitation, any applicable acknowledgements, license terms and disclaimers contained therein either generally available or specifically agreed in an Agreement between You and THIRD-PARTIES. In the event of a conflict between these TERMS and the terms of THIRD-PARTIES Software license, the terms of the applicable THIRD-PARTIES Software license shall prevail with regard to Your use of the relevant THIRD-PARTIES Services and resources in connection with DEDUP.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Access Security</h5>
+                                                        <p class="m-t-0">
+                                                            Features offered through DEDUP may require opening an account on your behalf and providing you the account information including your secret keys, password, resource IDs, and any other information (“CREDENTIALS”) required for you to use DEDUP or THIRD-PARTY services and resources.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You are entirely responsible for maintaining the confidentiality of your CREDENTIALS and agree to notify SOFTTRENDS immediately of any unauthorized use of your account or password, or any other breach of security.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            You may not use anyone else's CREDENTIAL at any time without the express permission and consent of the holder of that CREDENTUAL. SOFTTRENDS cannot and will not be liable for any loss or damage arising from your failure to comply with these obligations.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            SOFTTRENDS at its own option, or being notified by you may recycle or revoke the CREDENTIALS if we have reasons to believe or are notified by any THIRD-PARTY of a possible breach of security of your CREDENTIALS.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Data Security</h5>
+                                                        <div class="col-sm-12">
+                                                            <span class="m-t-0" style="font-size:14px"><strong>Transmission</strong></span>
+                                                            <p class="m-t-0">You acknowledge and agree that Internet transmissions are never completely private or secure. You understand that any message or information you send to DEDUP and the THIRD-PARTY Services and Resource may be read or intercepted by others, even if some transmission is encrypted.</p>
+                                                        </div>
+                                                        <div class="col-sm-12">
+                                                            <span class="m-t-0" style="font-size:14px"><strong>Retention</strong></span>
+                                                            <p class="m-t-0">You shall own all rights, title and interest in and to all of your data including but not limited to configuration information, and personal data (“CONFIDENTIAL INFORMATION”) either created or stored at resources owned by SOFTRENDS or THIRD-PARTIES.</p>
+                                                            <p class="m-t-0">You expressly acknowledge that in the course of your using DEDUP, THIRD-PARTIES will store your CONFIDENTIAL INFORMATION and have access to it. You agree that for the purpose of the Agreement THIRD-PARTIES have agreed in writing with You not to use your CONFIDENTIAL INFORMATION for their own benefit or the benefit of any person or entity besides You.</p>
+                                                        </div>
+                                                        <div class="col-sm-12">
+                                                            <span class="m-t-0" style="font-size:14px"><strong>Termination</strong></span>
+                                                            <p class="m-t-0">When you terminate the subscription, the TERMS of this agreement will terminate and SOFTTRENDS will immediately remove all CREDENTIALS and CONFIDENTIAL INFORMATION (if any) stored on its resources and instruct all THIRD-PARTIES to remove all Your CREDENTIALS and CONFIDENTIAL INFORMATION.</p>
+                                                            <p class="m-t-0">Your are solely responsible for securing and backing up any CONFIDENTIAL INFORMATION before you terminate the subscription.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Warranties and Disclaimer</h5>
+                                                        <p class="m-t-0">
+                                                            Softtrends warrants that (i) it has the validly to enter into these terms and has the legal power to do so, and the functionality of DEDUP will not be materially decreased during a subscription term. For any breach of the warranty, your exclusive remedy shall be to terminate your subscription to DEDUP. You warrant that you have the validly to enter into this Agreement and have the legal power to do so.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            DEDUP IS PROVIDED THROUGH THE MAKETPLACE AND THE ACCESS TO ANY THIRD-PARTIES SERVICES AND RESOURCE THROUGH DEDUP IS PROVIDED ON “AS-IS” BASIS AND SOFTTRENDS MAKES NO EXPRESS WARRANTIES AND DISCLAIMS ALL IMPLIED WARRANTIES REGARDING DEDUP, AND ACCESS TO THE THIRD-PARTIES SERVICES AND RESOURCE THROUGH DEDUP, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. WITHOUT LIMITING THE GENERALITY OF THE FOREGOING, SOFTTRENDS DO NOT REPRESENT OR WARRANT TO YOU THAT: (A) YOUR USE OF DEDUP WILL MEET YOUR REQUIREMENTS, (B) YOUR USE OF DEDUP WILL BE UNINTERRUPTED, TIMELY, SECURE OR FREE FROM ERROR, AND (C) DATA PROVIDED THROUGH DEDUP WILL BE ACCURATE.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Limitation of Liability</h5>
+                                                        <p class="m-t-0">
+                                                            IN NO EVENT SHALL SOFTTRENDS, ITS AFFILIATES, OR ITS RESPECTIVE DIRECTORS, OFFICERS, EMPLOYEES, AGENTS, SUCCESSORS AND/OR ASSIGNS BE LIABLE FOR ANY INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES, INCLUDING DAMAGES FOR LOST PROFITS OR LOSS OF DATA, ARISING OUT OF, OR RESULTING FROM, USE OF DEDUP, EVEN IF SOFTTRENDS IS AWARE OF OR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, EVEN IF SOFTTRENDS COULD HAVE FORESEEN, THE POSSIBLITY OF SUCH DAMAGE, HOWEVERY THEY ARISE, WHETHER IN BREACH OF CONTRACT OR IN TORT (INCLUDING NEGLIGENCE), INCLUDING WITHOUT LIMITATION DAMAGES DUE TO (A) YOUR USE OF OR THE INABILITY TO USE DEDUP (B) THE COST OF PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES RESULTING FROM ANY GOODS, DATA, INFORMATION OR PURCHASED OR OBTAINED OR MESSAGES RECEIVED OR TRANSACTIONS ENTERED INTO, THROUGH OR FROM DEDUP; (C) STATEMENTS OF CONDUCT OF ANY THIRD PARTY ON THE SOFTWARE, INCUDING WITHOUT LIMITATION UNUTHORIZED ACCESS TO OR ALTERATION OF TRANMISSIONS OR DATA, MALICIOUS OR CRIMINAL BEHAVIOR, OR FALSE OR FRAUDULENT TRANSACTIONS; OR (D) CONGTENT OR INFORMATION THEY MAY HAVE BEEN DOWNLOADED, USED, MODIFIED OR DISTRIBUTED.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            IF, NOTWITHSTANDING THE OTHER PROVISIONS OF THESE TERMS, SOFTTRENDS IS FOUND TO BE LIABLE TO YOU FOR ANY DAMAGE OR LOSS WHICH ARISES OUT OF OR IS IN ANY WAY CONNECTED WITH YOUR USE OF DEDUP, SOFTTRENDS’S AGGREGATE LIABILITY WITH RESPECT TO ANY SINGLE INCIDENT ARISING OUT OF OR RELATED TO THIS AGREEMENT (WHETHER IN CONTRACT OR TORT OR UNDER ANY OTHER THEORY OF LIABILITY) SHALL NOT EXCEED THE AMOUNT ATTRIBUTABLE TO DEDUP PAID BY YOU HEREUNDER IN THE 1 MONTHS PRECEDING THE INCIDENT, PROVIDED THAT IN NO EVENT SHALL SOFTTRENDS’S AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS AGREEMENT (WHETHER IN CONTRACT OR TORT OR UNDER ANY OTHER THEORY OF LIABILITY) EXCEED THE TOTAL AMOUNT ATTRIBUTABLE TO DEDUP PAID BY YOU HEREUNDER.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="media-body">
+                                                        <h5 class="media-heading">Termination</h5>
+                                                        <p class="m-t-0">
+                                                            This Agreement may be terminated by You by terminating the subscription to DEDUP through the MARKETPLACE from where you purchased the subscription.
+                                                        </p>
+                                                        <p class="m-t-0">
+                                                            SOFTTRENDS may terminate this Agreement with thirty (30) day notice to You if SOFTTRENDS removes DEDUP from sale at the MARKETPLACE.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <br />
+                                                <button type="button" class="btn btn-brand" name="btnAccept">Accept</button>&nbsp;<button type="button" class="btn btn-default" name="btnReject" onclick="javascript: location.href = 'https://dashboard.heroku.com/apps/@appName/resources';">Reject</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        var interval = null;
+
+        $(function () {
+            var max_process_count = @currentPlanFeatures.max_dedup_process_allowed;
+            if ("@isLicenseAccepted" == "True") {
+                //$("div.action-box-tools").html("<a class=\"btn btn-brand\" href=\"/connector\">Add New DeDup Process</a>")
+
+                //add action button
+                if ($("table > tbody")[0].children.length < max_process_count) {
+                    $("div.action-box-tools").html("<a class=\"btn btn-brand\" href=\"/connector\">Add New DeDup Process</a>")
+                }
+                else {
+                    $("div.action-box-tools").html("<a class=\"btn btn-brand\" id = \"ProcessLimitExceed\" href=\"#\">Add New DeDup Process</a>")
+
+                }
+                $("#ProcessLimitExceed").on("click", function (e) {
+                    e.preventDefault();
+                    //alert();
+
+                    Swal.fire({
+                        allowOutsideClick: false,
+                        text: "Plan limit reached for number of Processes that can be created. Please upgrade to higher plan or delete some process to create a new process",
+                        icon: 'error',
+                        showCancelButton: false,
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                        if (result.value) {
+                            e.preventDefault();
+
+                        }
+                    });
+                })
+                if ($(window).width() < 900) {
+                    $('#kt_table_1').DataTable(
+                        {
+                            responsive: true,
+                            scrollX: true,
+                            scrollY: false,
+                            scrollCollapse: false,
+                            paging: true,
+                            columnDefs: [
+                                {
+                                    title: 'Actions',
+                                    orderable: true
+                                }]
+                        });
+                }
+
+                else {
+                    $('#kt_table_1').DataTable(
+                        {
+                            responsive: true,
+                            paging: true
+
+                            //order: [[0, "asc"]],
+                            //responsive: {
+                            //    details: {
+                            //        type: 'column',
+                            //        target: 'tr'
+                            //    }
+                            //},
+                            //columnDefs: [{
+                            //    className: 'control',
+                            //    orderable: false,
+                            //    targets: -1
+                            //}]
+                        });
+                }
+
+                //$('#kt_table_1').KTDatatable();
+                $("#kt_table_1").on("click", 'a[name=syncdata]', function (e) {
+                    e.preventDefault();
+                    showMask();
+                    var syncStatusTag = $(this).closest("tr").find("div[name=syncStatus]");
+                    var parentrecord = syncStatusTag.parent();
+                    if (parentrecord[0].children.length > 1) {
+                        parentrecord[0].children[1].remove();
+                    }
+                    var params = {
+                        id: $(this).attr("data-id"),
+                        ccid: $(this).attr("data-uuid")
+                    };
+                    $(this).addClass("not-active");
+                    $.post("/connector/dosync", params, function (data) {
+                        hideMask();
+                        console.log(data);
+                        if (data.status == 0 && data.message) {
+                            Swal.fire('', data.message, 'error');
+                            return;
+                        }
+                        else {
+                            updateSyncStatus(syncStatusTag, 1, -1);
+                        }
+                    }).always(function () {
+                        hideMask();
+                    });
+                });
+
+                $(window).on('beforeunload', function () {
+                    if (interval) {
+                        clearInterval(interval);
+                    }
+                });
+
+                $("#kt_table_1").on("click", 'a[name=cleardata]', function (e) {
+                    e.preventDefault();
+                    showMask();
+                    var aTag = $(this);
+                    //if ($(aTag).html() == "Finalize") {
+                    if ($(aTag).html() == "Switch to Real") {
+
+                       // finalizeToDedup(aTag);
+                    }
+                    else {
+                        clearData(aTag);
+                    }
+                });
+            }
+            else if ($("#dedup_termsofuse").length > 0) {
+                $("#dedup_header_menu").hide();
+                $("button[name=btnAccept]").on("click", function (e) {
+                    e.preventDefault();
+                    showMask();
+                    $.post("/home/updatelicenseagreement", {
+                        isAccepted: true,
+                    }, function (data) {
+                        console.log(data);
+                        if (data && data.status == 200) {
+                            $("button[name=btnAccept]").prop("disabled", true);
+                            $("button[name=btnReject]").prop("disabled", true);
+                            location.reload(true);
+                        }
+                        else {
+                            Swal.fire('', "The license accept is not updated, Please try again.", 'error');
+                        }
+                    }).always(function () {
+                        hideMask();
+                    });
+                });
+            }
+
+
+            $("a[class=getrows]").on("click", function (e) {
+                e.preventDefault();
+
+                var pagesize = localStorage.getItem("pagesize");
+                if (pagesize == null) {
+
+                    pagesize = "10";
+                }
+                window.location.href = $(this)[0].href + "?pagesize=" + pagesize;
+            });
+
+
+            $("#kt_table_1").on("click", 'a[name=deletedata]', function (e) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to delete the dedup process?",
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.value) {
+                        e.preventDefault();
+                        showMask();
+                        var syncStatusTag = $(this).closest("tr").find("div[name=syncStatus]");
+                        var params = {
+                            id: $(this).attr("data-id"),
+                            ccid: $(this).attr("data-uuid")
+                        };
+                        $(this).addClass("not-active");
+                        $.get("/connector/delete?id="+params.id+"&ccid="+params.ccid, params, function (data) {
+                            //hideMask();
+                            console.log(data);
+                            window.location.reload();
+                        }).always(function () {
+                            hideMask();
+                        });
+                    }
+                });
+            });
+        });
+
+            function updateSyncStatus(element, status, count, syncEndedAt, dedupCount, totalrecordscount, uniqueRecordsCount, dedup_process_count) {
+            if ($ && element) {
+                switch (status) {
+                    case 0:
+                        $(element).html("Not Started");
+                        break;
+                    case 1:
+                        count = count < 0 ? 0 : count;
+                        if (dedup_process_count > 0 && totalrecordscount > 0) {
+
+                            var process_count = Math.round((dedup_process_count / totalrecordscount) * 100)
+                            $(element).html("<div class='info-box bg-aqua' style='min-height:30px'><div class='info-box-content' style='margin-left:0px'><div class='progress' id='progresbar' style='margin-bottom: 1px'><div class='progress-bar progress-bar-striped active' role='progressbar' aria-valuenow='60' aria-valuemin='0' aria-valuemax='100' style='width: 100%;'></div></div> <span class='progress-description'>" + process_count + "% deduped</span></div></div>");
+
+                        }
+                        else {
+                            $(element).html("<div class='info-box bg-aqua' style='min-height:30px'><div class='info-box-content' style='margin-left:0px'><div class='progress' id='progresbar' style='margin-bottom: 1px'><div class='progress-bar progress-bar-striped active' role='progressbar' aria-valuenow='60' aria-valuemin='0' aria-valuemax='100' style='width: 100%;'></div></div> <span class='progress-description'>" + count + " records merged</span></div></div>");
+                        }
+                            break;
+                    case 2:
+                        console.log(moment(syncEndedAt).format('YYYY-MM-DD hh:mm:ss A'));
+                        if (uniqueRecordsCount == null || uniqueRecordsCount == "" || uniqueRecordsCount == "undefined") {
+                            uniqueRecordsCount = 0;
+                        }
+                        if (totalrecordscount == null || totalrecordscount == "" || totalrecordscount == "undefined") {
+                            totalrecordscount = 0;
+                        }
+                        if (dedupCount == null || dedupCount == "" || dedupCount == "undefined") {
+                            dedupCount = 0;
+                        }
+                        var duplicate_records_remaining = "";
+                        if (parseInt(totalrecordscount) > 0) {
+                            duplicate_records_remaining = parseInt(totalrecordscount) - parseInt(uniqueRecordsCount);
+                        }
+
+                        else {
+                            duplicate_records_remaining = "0";
+                        }
+
+                        $(element).html("Completed" + (syncEndedAt ? "<br/> " + moment.utc(syncEndedAt).utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A') : "") + "<br/><span>" + totalrecordscount + " Total records Deduped</span><br/><span>" + dedupCount + " Duplicates records deleted</span><br/><span>" + duplicate_records_remaining + " Duplicate records remaining</span>");
+                        break;
+                    case 3:
+                        $(element).html("Failed" + (syncEndedAt ? "<br/> at " + moment.utc(syncEndedAt).utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A') : ""));
+                        break;
+                    case 10:
+                        if (uniqueRecordsCount == null || uniqueRecordsCount == "" || uniqueRecordsCount == "undefined") {
+                            uniqueRecordsCount = 0;
+                        }
+                        if (totalrecordscount == null || totalrecordscount == "" || totalrecordscount == "undefined") {
+                            totalrecordscount = 0;
+                        }
+                        if (dedupCount == null || dedupCount == "" || dedupCount == "undefined") {
+                            dedupCount = 0;
+                        }
+                        var duplicate_records_remaining = "";
+                        if (parseInt(totalrecordscount) > 0) {
+                             duplicate_records_remaining = parseInt(totalrecordscount) - parseInt(uniqueRecordsCount);
+                        }
+
+                        else {
+                             duplicate_records_remaining = "0";
+                        }
+                        $(element).html("Interrupted" + (syncEndedAt ? "<br/> " + moment.utc(syncEndedAt).utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A') : "") + "<br/><span>" + totalrecordscount + " Total records Deduped</span><br/><span>" + dedupCount + " Duplicates records deleted</span><br/><span>" + duplicate_records_remaining + " Duplicate records remaining</span>");
+
+                        //$(element).html("Interrupted" + (syncEndedAt ? "<br/> at " + moment.utc(syncEndedAt).utcOffset(moment().utcOffset()).format('YYYY-MM-DD hh:mm:ss A') : ""));
+                        break;
+                }
+
+                var aTags = $(element).closest("td").nextAll("td").find("a");
+                if (aTags.length > 0) {
+                    aTags.each(function () {
+                        if ($(this).attr("name") == "cleardata") {
+                            if (status === 1) {
+                                if ($(this).attr("data-type") === "simulate") {
+                                    $(this).html("Stop");
+                                }
+                                else {
+                                    $(this).css("visibility", "visible");
+                                    $(this).prev("span").css("visibility", "visible");
+                                }
+                            }
+                            else {
+                                if ($(this).attr("data-type") === "simulate") {
+                                    //$(this).html("Finalize");
+                                    //$(this).html("Switch to Real");
+                                    $(this).html("");
+
+
+                                }
+                                else {
+                                    $(this).css("visibility", "hidden");
+                                    $(this).prev("span").css("visibility", "hidden");
+                                }
+                            }
+                        }
+                        else {
+                            if (status == 1)
+                                $(this).addClass("not-active");
+                            else if ($(this).hasClass("not-active")) {
+                                $(this).removeClass("not-active");
+                            }
+                        }
+                    });
+                }
+            }
+        }
+       function upgradeVersion() {
+            if ($) {
+                showMask();
+                $.post("/home/upgrade", null, function (data) {
+                    hideMask();
+                    console.log(data);
+                    if (data) {
+                        if (data.status == "failed") {
+                            Swal.fire('','Dedup Upgrade has failed. You can try after sometime and if you continue to face this issue, Please contact Heroku add-on support for help.', 'error');
+                        }
+                        else {
+                            if (data.url != null && data.url.length > 20) {
+                                location.href = data.url;
+                            }
+                            else {
+                                Swal.fire('','Dedup add-on is being updated, Please use Dedup after 5 minutes', 'info');
+                            }
+                        }
+                    }
+                }).always(function () {
+                    hideMask();
+                });
+            }
+        }
+
+        function clearData(element) {
+            if ($) {
+                showMask();
+                $.post("/connector/cleardata", {
+                    id: $(element).attr("data-id"),
+                    ccid: $(element).attr("data-uuid"),
+                    isstop: true
+                }, function (data) {
+                    hideMask();
+                        console.log(data);
+                        var items = data.items || data.Items;
+                    var syncStatusTag = $(element).closest("tr").find("div[name=syncStatus]");
+                        updateSyncStatus(syncStatusTag, 10);
+                        //updateSyncStatus(syncStatusTag, 10, items.syncCount, items.syncEndedAt, items.deduped_count, items.child_record_count, items.unique_records_count);
+
+                }).always(function () {
+                    hideMask();
+                });
+            }
+        }
+
+        function getdeDupProcess() {
+            if ($) {
+                if ($("table[name=connectors] tr[id]").length == 0) {
+                    if (interval)
+                       clearTimeout(interval);
+                    return;
+                }
+                var _id = $("a[data-uuid]:eq(0)").attr("data-uuid") || "";
+                if (_id.length < 32 || $("span.progress-description").length == 0)
+                {
+                    return;
+                }
+                $.post("/connector/getsyncstatus", null, function (data) {
+                    if (data) {
+                        var items = data.items || data.Items;
+                        if (items != null && items.length > 0) {
+                            for (var i = 0; i < items.length; i++) {
+                                var tRow = $("tr[id=" + items[i].connectorId + "]");
+                                if (tRow.length > 0) {
+                                    updateSyncStatus($(tRow).find("div[name=syncStatus]"), items[i].syncStatus, items[i].syncCount, items[i].syncEndedAt, items[i].deduped_count, items[i].total_records_count, items[i].unique_records_count, items[i].dedup_process_count);
+                                    //if (items[i].syncStatus === 2) {
+                                    if ((items[i].syncStatus === 2 || items[i].syncStatus === 10) && items[i].review_before_delete == 0) {
+
+                                        var tdElm = $(tRow).find("div[name=syncStatus]").closest("td");
+                                        if (tdElm && tdElm.find("a").length === 0) {
+                                            //tdElm.append("<a class='' href='/connector/getrows/" + items[i].connectorId + "' title='View all deduped rows'>View</a>");
+                                            var pagesize = localStorage.getItem("pagesize");
+                                            if (pagesize == null) {
+
+                                                pagesize = "10";
+                                            }
+                                            tdElm.append("<a class='getrows' href='/connector/getrows/" + items[i].connectorId + "?pagesize=" + pagesize + "' title='View all deduped rows'>Review & Delete</a>");
+
+                                            //tdElm.append("<a class='getrows' href='/connector/getrows/" + items[i].connectorId + "' title='View all deduped rows'>Review & Delete</a>");
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+
+        //function updateChild(row) {
+        //    $('kt_table_1', row.child()).DataTable().ajax.reload();
+        //}
+        if ("@isLicenseAccepted"=="True") {
+            interval = setInterval(getdeDupProcess, 27000);
+        }
+
+        //function ConfirmDedupProcess(connectorName) {
+        //    if(Swal.fire({
+        //        title: 'Are you sure?',
+        //        text: "You want to delete the dedup process "+connectorName+"?",
+        //        icon: 'error',
+        //        showCancelButton: true,
+        //        confirmButtonColor: '#3085d6',
+        //        cancelButtonColor: '#d33',
+        //        confirmButtonText: 'Yes, delete it!'
+        //    }).then((result) => {
+        //        if (result.value) {
+        //             return true;
+        //        }
+        //    });
+
+//}
+//         function ConfirmSimulateToFinalize(connectorName) {
+//if(confirm("Are you sure to confirm to finalize "+connectorName+" process?"))
+//return true;
+//else
+//return false;
+//}
+    </script>
+}
+

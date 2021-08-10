@@ -1,0 +1,85 @@
+﻿@model Dedup.ViewModels.ErrorViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(Model == null ? "Unauthorized" : Model.Code.ToString())</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    <environment names="Development">
+        <link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+        <!-- Font Awesome -->
+        <link href="~/lib/font-awesome/css/font-awesome.css" rel="stylesheet" />
+        <!-- Ionicons -->
+        <link href="~/lib/ionicons/css/ionicons.css" rel="stylesheet" />
+        <link rel="stylesheet" href="~/css/site.css" />
+        <link rel="stylesheet" href="~/css/skins/_all-skins.css">
+    </environment>
+    <environment names="Staging,Production">
+        <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/css/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+              asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
+        <!-- Font Awesome -->
+        <link href="~/lib/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+        <!-- Ionicons -->
+        <link href="~/lib/ionicons/css/ionicons.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/skins/_all-skins.min.css">
+    </environment>
+</head>
+<body class="hold-transition">
+    @if (Model != null)
+    {
+        <div class="wrapper" style="height: auto;">
+            <div class="content-wrapper" style="min-height: 700px;margin-left:0px;">
+                <!-- Content Header (Page header) -->
+                @*<section class="content-header">
+                    <h1>
+                        @((int)Model.Code) @Model.Code.ToString() Page
+                    </h1>
+                </section>*@
+
+                <!-- Main content -->
+                <section class="content" style="position:absolute;top:25%;left:30%;" >
+                    <div class="error-page">
+                        <h2 class="headline text-red">@((int)Model.Code)</h2>
+                        <div class="error-content">
+                            <h3><i class="fa fa-warning text-red"></i> Oops! @Model.Code.ToString().</h3>
+                            <p>
+                                @Model.Message
+                            </p>
+                        </div>
+                    </div>
+                    <!-- /.error-page -->
+                </section>
+                <!-- /.content -->
+            </div>
+        </div>
+    }
+    <environment names="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+    </environment>
+    <environment names="Staging,Production">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.6/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal">
+        </script>
+    </environment>
+    <script type="text/javascript">
+        $(function(){
+            $(".content-wrapper").css({ minHeight: $(window).height() + "px" });
+        });
+    </script>
+</body>
+</html>

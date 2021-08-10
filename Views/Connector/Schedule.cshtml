@@ -1,0 +1,129 @@
+﻿@using Dedup.ViewModels
+@using Dedup.Common
+@model IEnumerable<ConnectorConfig>
+@{
+    ViewData["Title"] = "Schedules & Timers";
+}
+
+@if (Model != null)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="kt-portlet kt-padding-20">
+                <div class="kt-portlet__body">
+                    <div class="kt-form">
+                        <p class="no-padding no-margin">
+                            <label class="pull-left">Scheduled DeDup Process</label>
+                            <a class="pull-right btn btn-info btn-sm" style="margin-left: 66rem;" href="/connector">Add New DeDup Process</a>
+                        </p>
+                        <div style="clear:both;" />
+                        @foreach (ScheduleType scheduleType in Enum.GetValues(typeof(ScheduleType)))
+                        {
+                            @if (Model != null && Model.Where(c => c.scheduleType == scheduleType).Count() > 0)
+                            {
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <label style="text-transform:capitalize;color: #e68915 !important;">
+                                            @scheduleType.ToString().ToLower().Replace("_", " ")
+                                        </label>
+                                        <hr style="margin:0px;border-top: 1px solid #ef9a00;border-bottom: 1px solid #fff;" />
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table no-margin">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding-left:0px;border-bottom: 2px solid #f4f4f4;">Connector Name</th>
+                                                <th style="border-bottom: 2px solid #f4f4f4;">Source Type</th>
+                                                <th style="border-bottom: 2px solid #f4f4f4;">Source Name</th>
+                                                <th style="border-bottom: 2px solid #f4f4f4;">Destination Name</th>
+                                                <th style="border-bottom: 2px solid #f4f4f4;">&nbsp;</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var connector in Model.Where(c => c.scheduleType == scheduleType))
+                                            {
+                                                <tr>
+                                                    <td style="padding-left:0px;">
+                                                        @connector.connectorName
+                                                    </td>
+                                                    <td>
+                                                        @string.Format("{0}", connector.dataSource).Replace("_", " ")
+                                                    </td>
+                                                    <td>
+                                                        @connector.sourceObjectName
+                                                    </td>
+                                                    <td>
+                                                        @connector.destObjectName
+                                                    </td>
+                                                    <td style="white-space:nowrap;text-align:center !important;">
+                                                        <table>
+                                                            <tr>
+                                                                <td>
+                                                                    @Html.ActionLink("Edit", "index", "connector", new { id = connector.connectorId, ccid = connector.ccid })
+                                                                </td>
+                                                                <td style="display:@(connector.scheduleType==ScheduleType.MANUAL_SYNC?"none":"block");">
+                                                                    &nbsp;|&nbsp;
+                                                                    <a href="javascript:void(0);" name="switchToManual" data-id="@connector.connectorId" data-ccid="@connector.ccid"
+                                                                       title="Switch to Manual Sync">Switch to Manual Sync</a>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts{
+
+    <script src="~/js/bundlejueryval.min.js" type="text/javascript"></script>
+    <script src="~/js/site-validation.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $('[name=switchToManual]').click(function (e) {
+                e.preventDefault();
+                showMask();
+                $.post('/connector/switchtomanual/', { id: $(this).attr("data-id"), ccid: $(this).attr("data-ccid") }, function (response) {
+                    if (response && response.status == 200) {
+                        location.reload();
+                    }
+                    else {
+                        Swal.fire('', "Switch to Manual Sync faild.", 'error');
+                        //showAlert("Switch to Manual Sync faild.", "Error");
+                    }
+                }, 'json').always(function () {
+                    hideMask();
+                });
+            });
+        })
+
+
+        $(function () {
+            $('[name=switchToManual]').click(function (e) {
+                e.preventDefault();
+                showMask();
+                $.post('/connector/switchtomanual/', { id: $(this).attr("data-id"), ccid: $(this).attr("data-ccid") }, function (response) {
+                    if (response && response.status == 200) {
+                        location.reload();
+                    }
+                    else {
+                        Swal.fire('', "Switch to Manual Sync faild.", 'error');
+                        // showAlert("Switch to Manual Sync faild.", "Error");
+                    }
+                }, 'json').always(function () {
+                    hideMask();
+                });
+            });
+        })
+
+    </script>
+}
